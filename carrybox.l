@@ -1,19 +1,26 @@
 #!/usr/bin/env roseus
 
-(load "package://hrpsys_ros_bridge_tutorials/euslisp/jaxon_red-interface.l")
-(jaxon_red-init)
+;; (load "package://hrpsys_ros_bridge_tutorials/euslisp/jaxon_red-interface.l")
+;; (jaxon_red-init)
+(load "jaxonred.l")
 (setq *robot* *jaxon_red*)
+(push-init t)
+
+(defun mv ()
+  (objects (list *robot*))
+  t
+  )
 
 (defun nipbox (&optional (armangle 85))
-  (send *robot* :larm :inverse-kinematics (make-coords :pos #f(430 350 1050) :rpy (list 0 0 (deg2rad 80))))
-  (send *robot* :rarm :inverse-kinematics (make-coords :pos #f(430 -350 1050) :rpy (list 0 0 (deg2rad -80))))
+  (send *robot* :larm :inverse-kinematics (make-coords :pos #f(380 350 1050) :rpy (list 0 0 (deg2rad 80))))
+  (send *robot* :rarm :inverse-kinematics (make-coords :pos #f(380 -350 1050) :rpy (list 0 0 (deg2rad -80))))
   (send *robot* :legs :move-end-pos #f(0 0 130) :world)
   (send *ri* :angle-vector (send *robot* :angle-vector) 1000)
   (send *ri* :wait-interpolation)
   (print "hoge")
   
-  (send *robot* :larm :inverse-kinematics (make-coords :pos #f(430 250 1050) :rpy (list 0 0 (deg2rad armangle))))
-  (send *robot* :rarm :inverse-kinematics (make-coords :pos #f(430 -250 1050) :rpy (list 0 0 (deg2rad (* -1 armangle)))))
+  (send *robot* :larm :inverse-kinematics (make-coords :pos #f(380 250 1050) :rpy (list 0 0 (deg2rad armangle))))
+  (send *robot* :rarm :inverse-kinematics (make-coords :pos #f(380 -250 1050) :rpy (list 0 0 (deg2rad (* -1 armangle)))))
   (send *ri* :angle-vector (send *robot* :angle-vector) 1000)
   (send *ri* :wait-interpolation)
   (print "hoge")
@@ -22,8 +29,8 @@
   )
 
 (defun liftbox (&optional (armangle 85))
-  (send *robot* :larm :inverse-kinematics (make-coords :pos #f(430 250 1200) :rpy (list 0 0 (deg2rad armangle))))
-  (send *robot* :rarm :inverse-kinematics (make-coords :pos #f(430 -250 1200) :rpy (list 0 0 (deg2rad (* -1 armangle)))))
+  (send *robot* :larm :inverse-kinematics (make-coords :pos #f(380 250 1200) :rpy (list 0 0 (deg2rad armangle))))
+  (send *robot* :rarm :inverse-kinematics (make-coords :pos #f(380 -250 1200) :rpy (list 0 0 (deg2rad (* -1 armangle)))))
   (send *ri* :angle-vector (send *robot* :angle-vector) 1000)
   (send *ri* :wait-interpolation)
 
