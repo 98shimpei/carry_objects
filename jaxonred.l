@@ -60,10 +60,10 @@
   (send *ri* :autobalancerservice_stopStabilizer)
   (send *ri* :stop-auto-balancer)
   (send *ri* :set-auto-balancer-param
-             :is-hand-fix-mode nil
+             :is-hand-fix-mode t
              :ik-mode 1)
   (if use-hand?
-    (send *ri* :start-auto-balancer :limbs '(:rarm :larm :rleg :lleg))
+    (send *ri* :start-auto-balancer :limbs '(:rarm :rleg :lleg))
     (send *ri* :start-auto-balancer :limbs '(:rleg :lleg)))
   (send *ri* :autobalancerservice_startStabilizer)
   )

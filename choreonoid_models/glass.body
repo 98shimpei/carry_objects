@@ -8,7 +8,7 @@ links:
     name: Glass
     translation: [ 0, 0, 0 ]
     jointType: free
-    centerOfMass: [ 0, 0, 0.1 ]
+    centerOfMass: [ 0, 0, 0.12 ]
     mass: 0.3
     inertia: [
       0.00001, 0,   0,
@@ -29,23 +29,23 @@ links:
                 diffuseColor: [ 1.0, 0, 1.0 ]
       -
         type: Transform
-        translation: [ 0, 0, 0.025 ]
+        translation: [ 0, 0, 0.035 ]
         rotation: [ 1, 0, 0, 90 ]
         elements:
           Shape:
             geometry:
               type: Cylinder
               radius: 0.003
-              height: 0.05
+              height: 0.07
             appearance: *BodyAppearance
       -
         type: Transform
-        translation: [ 0, 0, 0.08 ]
+        translation: [ 0, 0, 0.1 ]
         rotation: [ 1, 0, 0, -90 ]
         elements:
           Shape:
             geometry:
               type: Cone
-              radius: 0.025
+              radius: 0.035
               height: 0.09
             appearance: *BodyAppearance
