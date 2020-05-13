@@ -1,1 +1,4 @@
 # carry_objects
+
+hrpsys_choreonoid_tutorials/scripts/jaxon_red_setup.pyの54行目をコメントアウトする
+(勝手に初期姿勢にならないようにするため)

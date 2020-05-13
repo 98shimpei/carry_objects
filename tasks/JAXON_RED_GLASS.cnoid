@@ -20,7 +20,7 @@ items:
           plugin: Body
           class: BodyItem
           data: 
-            modelFile: "/home/shimpei/catkin_ws/jaxon_tutorial/src/rtmros_choreonoid/jvrc_models/JAXON_JVRC/JAXON_JVRCmain_hrpsys_bush.wrl"
+            modelFile: "/home/shimpei/catkin_ws/kojio/src/rtm-ros-robotics/rtmros_choreonoid/jvrc_models/JAXON_JVRC/JAXON_JVRCmain_hrpsys_bush.wrl"
             currentBaseLink: "WAIST"
             rootPosition: [ 0.00102565693, 0.0154784806, 0.974608666 ]
             rootAttitude: [ 
@@ -57,8 +57,8 @@ items:
               data: 
                 isNoDelayMode: true
                 controllerOptions: ""
-                moduleName: "/home/shimpei/catkin_ws/jaxon_tutorial/src/rtmros_choreonoid/hrpsys_choreonoid/PDcontroller"
-                confFileName: "/home/shimpei/catkin_ws/jaxon_tutorial/src/rtmros_choreonoid/hrpsys_choreonoid_tutorials/config/SensorReaderRTC_JAXON_RED.PD.conf"
+                moduleName: "/home/shimpei/catkin_ws/kojio/src/rtm-ros-robotics/rtmros_choreonoid/hrpsys_choreonoid/PDcontroller"
+                confFileName: "/home/shimpei/catkin_ws/kojio/src/rtm-ros-robotics/rtmros_choreonoid/hrpsys_choreonoid_tutorials/config/SensorReaderRTC_JAXON_RED.PD.conf"
                 configurationMode: "Use Configuration File"
                 autoConnect: false
                 instanceName: "JAXON_RED(Robot)0"
@@ -183,7 +183,7 @@ items:
           plugin: Body
           class: BodyItem
           data: 
-            modelFile: "/home/shimpei/catkin_ws/carry_objects/choreonoid_models/plate.body"
+            modelFile: "../choreonoid_models/plate.body"
             currentBaseLink: "Plate"
             rootPosition: [ 0.374062777, 0.542849445, 1.08697542 ]
             rootAttitude: [ 
@@ -206,7 +206,7 @@ items:
           plugin: Body
           class: BodyItem
           data: 
-            modelFile: "/home/shimpei/catkin_ws/carry_objects/choreonoid_models/glass.body"
+            modelFile: "../choreonoid_models/glass.body"
             currentBaseLink: "Glass"
             rootPosition: [ 0.446062169, 0.540853186, 1.11603357 ]
             rootAttitude: [ 
@@ -229,7 +229,7 @@ items:
           plugin: Body
           class: BodyItem
           data: 
-            modelFile: "/home/shimpei/catkin_ws/carry_objects/choreonoid_models/cup.body"
+            modelFile: "../choreonoid_models/cup.body"
             currentBaseLink: "Cup"
             rootPosition: [ 0.299642465, 0.5409, 1.15311891 ]
             rootAttitude: [ 
@@ -252,7 +252,7 @@ items:
       plugin: Python
       class: PythonScriptItem
       data: 
-        file: "/home/shimpei/catkin_ws/jaxon_tutorial/src/rtmros_choreonoid/hrpsys_choreonoid/scripts/ros_service_server.py"
+        file: "/home/shimpei/catkin_ws/kojio/src/rtm-ros-robotics/rtmros_choreonoid/hrpsys_choreonoid/scripts/ros_service_server.py"
         executionOnLoading: true
         backgroundExecution: false
 views: 

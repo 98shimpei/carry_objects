@@ -31,7 +31,7 @@
   <env if="$(arg LOAD_OBJECTS)"
        name="EXTRA_CHOREONOID_OBJS" value="$(arg ENVIRONMENT_YAML)" />
 
-  <arg name="PROJECT_FILE" default="/home/shimpei/catkin_ws/carry_objects/tasks/JAXON_RED_$(arg taskname_last).cnoid" />
+  <arg name="PROJECT_FILE" default="$(find carry_objects)/tasks/JAXON_RED_$(arg taskname_last).cnoid" />
   <arg name="SIMULATOR_NAME" default="JAXON_RED(Robot)0" />
   <arg if="$(arg USE_ROBOTHARDWARE)"
        name="BRIDGE_SIMULATOR_NAME" default="RobotHardware_choreonoid0" />
