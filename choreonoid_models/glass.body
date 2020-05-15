@@ -49,3 +49,15 @@ links:
               radius: 0.035
               height: 0.09
             appearance: *BodyAppearance
+      -
+        type: AccelerationSensor
+        name: GlassAcc
+        id: 11
+        translation: [ 0, 0, 0.1 ]
+        maxAcceleration: [10, 10, 10]
+      -
+        type: RateGyroSensor
+        name: GlassGyro
+        id: 12
+        translation: [0, 0, 0.1]
+        maxAngularVelocity: [10, 10, 10]
