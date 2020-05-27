@@ -48,6 +48,7 @@ links:
               type: Cone
               radius: 0.035
               height: 0.09
+              bottom: false
             appearance: *BodyAppearance
       -
         type: AccelerationSensor

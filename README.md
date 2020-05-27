@@ -1,4 +1,5 @@
 # carry_objects
 
-hrpsys_choreonoid_tutorials/scripts/jaxon_red_setup.pyの54行目をコメントアウトする
+hrpsys_choreonoid_tutorials/scripts/jaxon_red_setup.pyの54行目付近をだいたいコメントアウト
 (勝手に初期姿勢にならないようにするため)
+その後自分でeusから実行

@@ -4,6 +4,7 @@
 ;; (jaxon_red-init)
 (load "jaxonred.l")
 (setq *robot* *jaxon_red*)
+(start-footguided-modification)
 (push-init t)
 
 (defun mv ()

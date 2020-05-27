@@ -1,4 +1,6 @@
 (require "package://hrpsys_ros_bridge_tutorials/euslisp/jaxon_red-interface.l")
+
+(load "utils.l")
 (unless (boundp '*jaxon_red*)
   (jaxon_red-init)
   (setq *robot* *jaxon_red*)
@@ -68,4 +70,33 @@
   (send *ri* :autobalancerservice_startStabilizer)
   )
 
-;; (start-footguided-modification)
+(send *robot* :angle-vector (send *ri* :state :potentio-vector))
+(send *ri* :angle-vector (send *ri* :state :potentio-vector))
+(mv)
+(print "1")
+(unix::sleep 3)
+(start-footguided-modification)
+(print "2")
+(unix::sleep 3)
+;; (send *ri* :set-ref-force #f(0 0 500) 100 :arms)
+;; (send *ri* :set-auto-balancer-param
+;;            :is-hand-fix-mode nil
+;;            :ik-mode 1)
+(send *ri* :set-ref-forces
+      (list
+       #f(0 0 0) ;;rleg
+       #f(0 0 0) ;;lleg
+       #f(0 0 -270) ;;rarm
+       #f(0 0 -270) ;;larm
+       )
+      1000)
+(print "set-ref-force")
+(unix::sleep 3)
+(print "end")
+(send *ri* :start-auto-balancer :limbs '(:larm :rarm :rleg :lleg))
+(print "start-auto-balancer")
+(unix::sleep 3)
+;; (send *ri* :autobalancerservice_startStabilizer)
+(print "4")
+(unix::sleep 3)
+(print "start")

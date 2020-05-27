@@ -1,0 +1,13 @@
+(defun savelog (&optional (fname "carryobject"))
+  (progn
+    (send *ri* :set-log-maxlength 200000)
+    (send *ri* :start-log)
+    (read-line)
+    (send *ri* :save-log (format nil "~A~A" "/home/shimpei/log/" fname))
+    )
+  )
+
+(defun mv ()
+  (objects (list *robot*))
+  t
+  )

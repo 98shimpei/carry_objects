@@ -1,0 +1,20 @@
+format: ChoreonoidBody
+formatVersion: 1.0
+
+name: sphere
+rootLink: body
+links:
+  -
+    name: body
+    jointType: free
+    mass: 0.13
+    inertia: [
+      0.001, 0,       0,
+      0,       0.001, 0,
+      0,       0,       0.001 ]
+    elements:
+      Shape:
+        geometry: { type: Sphere, radius: 0.04 }
+        appearance:
+          material:
+            diffuseColor: [ 0.0, 0.0, 1.0 ]
