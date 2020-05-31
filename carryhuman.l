@@ -78,20 +78,22 @@
 ;; (send *ri* :set-auto-balancer-param
 ;;            :is-hand-fix-mode nil
 ;;            :ik-mode 1)
-;; (send *ri* :set-auto-balancer-param
-;;       :use-force-mode :MODE-REF-FORCE-WITH-FOOT
-;;       :additional-force-applied-link-name "RLEG_JOINT3"
-;;       :additional-force-applied-point-offset #F(0 0.2 0)
-;;       )
+
+(send *ri* :set-auto-balancer-param
+      :use-force-mode :MODE-REF-FORCE-WITH-FOOT
+      :additional-force-applied-link-name "RLEG_JOINT3"
+      :additional-force-applied-point-offset #F(0 0.1 0)
+      )
 (send *ri* :set-ref-forces
       (list
-       #f(0 0 0) ;;rleg
-       #f(0 0 0) ;;lleg
-       #f(0 0 -260) ;;rarm 267
-       #f(0 0 -285) ;;larm
+       #f(0 0 650) ;;rleg 1300
+       #f(0 0 650) ;;lleg 1300
+       #f(0 0 0) ;;rarm -260
+       #f(0 0 0) ;;larm -285
        )
       1000)
-(send *ri* :start-auto-balancer :limbs '(:larm :rarm :rleg :lleg))
 (unix::sleep 3)
+(send *ri* :start-auto-balancer :limbs '(:larm :rarm :rleg :lleg))
 ;; (send *ri* :autobalancerservice_startStabilizer)
+(send *ri* :set-auto-balancer-param :is-emergency-step-mode nil)
 (print "start")
