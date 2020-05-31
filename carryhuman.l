@@ -73,30 +73,25 @@
 (send *robot* :angle-vector (send *ri* :state :potentio-vector))
 (send *ri* :angle-vector (send *ri* :state :potentio-vector))
 (mv)
-(print "1")
-(unix::sleep 3)
 (start-footguided-modification)
-(print "2")
-(unix::sleep 3)
 ;; (send *ri* :set-ref-force #f(0 0 500) 100 :arms)
 ;; (send *ri* :set-auto-balancer-param
 ;;            :is-hand-fix-mode nil
 ;;            :ik-mode 1)
+;; (send *ri* :set-auto-balancer-param
+;;       :use-force-mode :MODE-REF-FORCE-WITH-FOOT
+;;       :additional-force-applied-link-name "RLEG_JOINT3"
+;;       :additional-force-applied-point-offset #F(0 0.2 0)
+;;       )
 (send *ri* :set-ref-forces
       (list
        #f(0 0 0) ;;rleg
        #f(0 0 0) ;;lleg
-       #f(0 0 -270) ;;rarm
-       #f(0 0 -270) ;;larm
+       #f(0 0 -260) ;;rarm 267
+       #f(0 0 -285) ;;larm
        )
       1000)
-(print "set-ref-force")
-(unix::sleep 3)
-(print "end")
 (send *ri* :start-auto-balancer :limbs '(:larm :rarm :rleg :lleg))
-(print "start-auto-balancer")
 (unix::sleep 3)
 ;; (send *ri* :autobalancerservice_startStabilizer)
-(print "4")
-(unix::sleep 3)
 (print "start")
