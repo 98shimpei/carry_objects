@@ -20,7 +20,7 @@
        )
        1000)
 (send *ri* :start-auto-balancer :limbs '(:rarm :rleg :lleg))
-(send *ri* :autobalancerservice_startStabilizer)
+(send *ri* :start-st)
 
 
 (defun monitor-force (leg msg)

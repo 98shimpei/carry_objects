@@ -86,14 +86,14 @@
       )
 (send *ri* :set-ref-forces
       (list
-       #f(0 0 650) ;;rleg 1300
-       #f(0 0 650) ;;lleg 1300
+       #f(0 0 1300) ;;rleg 1300
+       #f(0 0 1300) ;;lleg 1300
        #f(0 0 0) ;;rarm -260
        #f(0 0 0) ;;larm -285
        )
       1000)
 (unix::sleep 3)
-(send *ri* :start-auto-balancer :limbs '(:larm :rarm :rleg :lleg))
+(send *ri* :start-auto-balancer :limbs '(:rarm :larm :rleg :lleg))
 ;; (send *ri* :autobalancerservice_startStabilizer)
 (send *ri* :set-auto-balancer-param :is-emergency-step-mode nil)
 (print "start")

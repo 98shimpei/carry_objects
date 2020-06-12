@@ -1,20 +1,20 @@
 format: ChoreonoidBody
 formatVersion: 1.0
 
-name: heavybox
+name: cardboard
 rootLink: body
 links:
   -
     name: body
     jointType: free
-    mass: 30 
+    mass: 0.2  
     inertia: [
-      0.72533, 0,       0,
-      0,       0.08533, 0,
-      0,       0,       0.72533 ]
+      0.004, 0,       0,
+      0,       0.0055, 0,
+      0,       0,       0.0055 ]
     elements:
       Shape:
-        geometry: { type: Box, size: [ 0.1, 1.5, 0.1 ] }
+        geometry: { type: Box, size: [ 0.46, 0.35, 0.34 ] }
         appearance:
           material:
             diffuseColor: [ 1.0, 1.0, 0.0 ]

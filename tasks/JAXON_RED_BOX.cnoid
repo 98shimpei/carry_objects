@@ -22,28 +22,28 @@ items:
           data: 
             modelFile: "/home/shimpei/catkin_ws/jaxon_tutorial/src/rtmros_choreonoid/jvrc_models/JAXON_JVRC/JAXON_JVRCmain_hrpsys_bush.wrl"
             currentBaseLink: "WAIST"
-            rootPosition: [ -0.0010236151, -0.00280066961, 0.838083778 ]
+            rootPosition: [ 0, 0, 1.0185 ]
             rootAttitude: [ 
-              -0.000424990637, -0.999999247, -0.00115119349, 
-              0.98091577, -0.000193050096, -0.194433061, 
-              0.194432692, -0.00121185601, 0.980915113 ]
+              2.22044605e-16, -1, 0, 
+              1, 2.22044605e-16, 0, 
+              0, 0, 1 ]
             jointPositions: [ 
-              -0.000791, -0.003132, -0.679388,  1.283179, -0.415646,  0.003913,  0.000009, -0.002752, -0.681630,  1.284032, 
-              -0.415839,  0.003868, -0.001488,  0.021484,  0.000281,  0.000002,  0.000682, -0.011168, -0.463233, -0.276904, 
-               0.093134, -0.846480, -0.085721,  0.001316, -0.925109,  0.016425, -0.454880,  0.277606,  0.088954, -0.827932, 
-              -0.089654, -0.001797, -1.128853,  0.000457,  0.015145,  0.000485,  0.000945,  7.312094,  0.001087, -0.000029, 
-               0.009372,  0.001266,  0.000254,  0.007845 ]
-            initialRootPosition: [ -0.00562416278, -0.00854899542, 0.843293402 ]
+               0.000054, -0.003093, -0.262419,  0.681091, -0.418672,  0.003093,  0.000054, -0.003093, -0.262401,  0.681084, 
+              -0.418684,  0.003093,  0.000000,  0.000000,  0.000000,  0.000000,  0.000000,  0.000000,  0.523599, -0.349066, 
+              -0.087266, -1.396263,  0.000000,  0.000000, -0.349066,  0.000000,  0.523599,  0.349066,  0.087266, -1.396263, 
+               0.000000,  0.000000, -0.349066,  0.000000,  0.000000,  0.000000,  0.000000,  0.000000,  0.000000,  0.000000, 
+               0.000000,  0.000000,  0.000000,  0.000000 ]
+            initialRootPosition: [ 0, 0, 1.0185 ]
             initialRootAttitude: [ 
-              0.00115693212, -0.99997516, -0.00695278891, 
-              0.980175783, 0.00251150353, -0.198113926, 
-              0.198126467, -0.00658575088, 0.98015434 ]
+              2.22044605e-16, -1, 0, 
+              1, 2.22044605e-16, 0, 
+              0, 0, 1 ]
             initialJointPositions: [ 
-              -0.001135, -0.003431, -0.670206,  1.268854, -0.416962,  0.003465, -0.000492, -0.003131, -0.670206,  1.268854, 
-              -0.417104,  0.003477, -0.000306,  0.009749,  0.000632,  0.000019,  0.000322, -0.003865, -0.495759, -0.173721, 
-               0.090553, -0.860646, -0.086698,  0.000697, -0.926319,  0.007623, -0.494211,  0.176407,  0.088703, -0.854373, 
-              -0.088397, -0.000068, -1.132284,  0.000178,  0.000363,  0.000164,  0.000324,  2.126548,  0.001458,  0.005302, 
-               0.012261,  0.000910,  0.006300,  0.018806 ]
+               0.000054, -0.003093, -0.262419,  0.681091, -0.418672,  0.003093,  0.000054, -0.003093, -0.262401,  0.681084, 
+              -0.418684,  0.003093,  0.000000,  0.000000,  0.000000,  0.000000,  0.000000,  0.000000,  0.523599, -0.349066, 
+              -0.087266, -1.396263,  0.000000,  0.000000, -0.349066,  0.000000,  0.523599,  0.349066,  0.087266, -1.396263, 
+               0.000000,  0.000000, -0.349066,  0.000000,  0.000000,  0.000000,  0.000000,  0.000000,  0.000000,  0.000000, 
+               0.000000,  0.000000,  0.000000,  0.000000 ]
             zmp: [ 0, 0, 0 ]
             collisionDetection: true
             selfCollisionDetection: false
@@ -58,7 +58,7 @@ items:
                 isNoDelayMode: true
                 controllerOptions: ""
                 moduleName: "/home/shimpei/catkin_ws/jaxon_tutorial/src/rtmros_choreonoid/hrpsys_choreonoid/PDcontroller"
-                confFileName: "/home/shimpei/catkin_ws/jaxon_tutorial/src/rtmros_choreonoid/hrpsys_choreonoid_tutorials/config/SensorReaderRTC_JAXON_RED.PD.conf"
+                confFileName: "${PROJECT_DIR}/SensorReaderRTC_JAXON_RED.PD.conf"
                 configurationMode: "Use Configuration File"
                 autoConnect: false
                 instanceName: "JAXON_RED(Robot)0"
@@ -72,13 +72,13 @@ items:
           data: 
             modelFile: "${SHARE}/model/misc/floor.body"
             currentBaseLink: ""
-            rootPosition: [ 0, 0, -0.113 ]
+            rootPosition: [ 0, 0, -0.1 ]
             rootAttitude: [ 
               1, 0, 0, 
               0, 1, 0, 
               0, 0, 1 ]
             jointPositions: [  ]
-            initialRootPosition: [ 0, 0, -0.113 ]
+            initialRootPosition: [ 0, 0, -0.1 ]
             initialRootAttitude: [ 
               1, 0, 0, 
               0, 1, 0, 
@@ -179,40 +179,144 @@ items:
                 antiAliasing: false
         - 
           id: 9
-          name: "HUMAN"
+          name: "Floor"
           plugin: Body
           class: BodyItem
           data: 
-            modelFile: "/home/shimpei/catkin_ws/jaxon_tutorial/src/rtmros_choreonoid/jvrc_models/JAXON_JVRC/JAXON_JVRCmain_hrpsys_bush.wrl"
-            currentBaseLink: "WAIST"
-            rootPosition: [ 0.116344144, 0.27200343, 1.21245854 ]
+            modelFile: "/home/shimpei/choreonoid_models/misc/smallfloor.body"
+            currentBaseLink: "BASE"
+            rootPosition: [ 0, 1.3, 0.7 ]
             rootAttitude: [ 
-              0.249327342, -0.208363172, -0.945738159, 
-              0.0437363191, 0.978005532, -0.20394194, 
-              0.96743114, 0.00948519585, 0.252956558 ]
-            jointPositions: [ 
-               0.273636, -0.052258,  0.131731,  1.319134, -0.361526,  0.191827, -0.064558, -0.547534, -0.045054,  1.517214, 
-              -0.400605,  0.146751, -0.460664,  0.404429,  0.286087, -6.091374, -10.317638, -2.193780,  0.160805, -0.777635, 
-               3.088993,  0.386390,  4.688365, -2.131151,  3.848013,  1.098168,  0.106135,  0.622497, -1.998695,  0.284190, 
-               0.022481, -0.063053,  0.429565,  0.050733, -0.360485,  0.208850,  0.956325,  8.333159, -0.000006,  0.000004, 
-               0.000014, -0.000006, -0.000016,  0.000018 ]
-            initialRootPosition: [ 0.107650259, 0.273583981, 1.2730436 ]
+              1, 0, 0, 
+              0, 1, 0, 
+              0, 0, 1 ]
+            jointPositions: [  ]
+            initialRootPosition: [ 0, 1.3, 0.7 ]
             initialRootAttitude: [ 
-              0.371977798, -0.0434913001, -0.927222209, 
-              -0.119326985, 0.98837325, -0.0942305155, 
-              0.920539835, 0.14569429, 0.36246322 ]
-            initialJointPositions: [ 
-               0.355958,  0.189611,  0.161997,  1.046115,  0.300293,  0.375525, -0.190228, -0.282748,  0.101009,  1.158916, 
-               0.401772, -0.733478, -0.268668,  0.103170,  0.307266,  0.198941, -7.100298, -2.825699, -0.695220, -0.278145, 
-               1.382492, -0.171811,  0.640494,  2.463949, -0.075139,  1.233373,  0.087552,  0.564789, -2.087364,  0.242812, 
-               0.681930,  0.415236,  0.419170, -0.428561, -0.302327, -0.260593,  0.325198,  3.126214, -0.000008, -0.000073, 
-               0.000064, -0.000002,  0.000025,  0.000061 ]
+              1, 0, 0, 
+              0, 1, 0, 
+              0, 0, 1 ]
+            zmp: [ 0, 0, 0 ]
+            collisionDetection: true
+            selfCollisionDetection: false
+            isEditable: false
+        - 
+          id: 10
+          name: "cardboard"
+          plugin: Body
+          class: BodyItem
+          data: 
+            modelFile: "/home/shimpei/catkin_ws/kojio/src/carry_objects/choreonoid_models/cardboard.body"
+            currentBaseLink: "body"
+            rootPosition: [ 0, 0.5, 1 ]
+            rootAttitude: [ 
+              1, 0, 0, 
+              0, 1, 0, 
+              0, 0, 1 ]
+            jointPositions: [  ]
+            initialRootPosition: [ 0, 0.5, 1 ]
+            initialRootAttitude: [ 
+              1, 0, 0, 
+              0, 1, 0, 
+              0, 0, 1 ]
+            zmp: [ 0, 0, 0 ]
+            collisionDetection: true
+            selfCollisionDetection: false
+            isEditable: true
+        - 
+          id: 11
+          name: "cardboard"
+          plugin: Body
+          class: BodyItem
+          data: 
+            modelFile: "/home/shimpei/catkin_ws/kojio/src/carry_objects/choreonoid_models/cardboard.body"
+            currentBaseLink: "body"
+            rootPosition: [ 0, 0.5, 1.36 ]
+            rootAttitude: [ 
+              1, 0, 0, 
+              0, 1, 0, 
+              0, 0, 1 ]
+            jointPositions: [  ]
+            initialRootPosition: [ 0, 0.5, 1.36 ]
+            initialRootAttitude: [ 
+              1, 0, 0, 
+              0, 1, 0, 
+              0, 0, 1 ]
+            zmp: [ 0, 0, 0 ]
+            collisionDetection: true
+            selfCollisionDetection: false
+            isEditable: true
+        - 
+          id: 12
+          name: "cardboard"
+          plugin: Body
+          class: BodyItem
+          data: 
+            modelFile: "/home/shimpei/catkin_ws/kojio/src/carry_objects/choreonoid_models/cardboard.body"
+            currentBaseLink: "body"
+            rootPosition: [ 0, 0.5, 1.72 ]
+            rootAttitude: [ 
+              1, 0, 0, 
+              0, 1, 0, 
+              0, 0, 1 ]
+            jointPositions: [  ]
+            initialRootPosition: [ 0, 0.5, 1.72 ]
+            initialRootAttitude: [ 
+              1, 0, 0, 
+              0, 1, 0, 
+              0, 0, 1 ]
+            zmp: [ 0, 0, 0 ]
+            collisionDetection: true
+            selfCollisionDetection: false
+            isEditable: true
+        - 
+          id: 13
+          name: "cardboard"
+          plugin: Body
+          class: BodyItem
+          data: 
+            modelFile: "/home/shimpei/catkin_ws/kojio/src/carry_objects/choreonoid_models/cardboard.body"
+            currentBaseLink: "body"
+            rootPosition: [ 0, 0.5, 2.08 ]
+            rootAttitude: [ 
+              1, 0, 0, 
+              0, 1, 0, 
+              0, 0, 1 ]
+            jointPositions: [  ]
+            initialRootPosition: [ 0, 0.5, 2.08 ]
+            initialRootAttitude: [ 
+              1, 0, 0, 
+              0, 1, 0, 
+              0, 0, 1 ]
+            zmp: [ 0, 0, 0 ]
+            collisionDetection: true
+            selfCollisionDetection: false
+            isEditable: true
+        - 
+          id: 14
+          name: "cardboard"
+          plugin: Body
+          class: BodyItem
+          data: 
+            modelFile: "/home/shimpei/catkin_ws/kojio/src/carry_objects/choreonoid_models/cardboard.body"
+            currentBaseLink: "body"
+            rootPosition: [ 0, 0.5, 2.44 ]
+            rootAttitude: [ 
+              1, 0, 0, 
+              0, 1, 0, 
+              0, 0, 1 ]
+            jointPositions: [  ]
+            initialRootPosition: [ 0, 0.5, 2.44 ]
+            initialRootAttitude: [ 
+              1, 0, 0, 
+              0, 1, 0, 
+              0, 0, 1 ]
             zmp: [ 0, 0, 0 ]
             collisionDetection: true
             selfCollisionDetection: false
             isEditable: true
     - 
-      id: 10
+      id: 15
       name: "ros_service_server.py"
       plugin: Python
       class: PythonScriptItem
@@ -238,9 +342,9 @@ views:
     class: ItemTreeView
     mounted: true
     state: 
-      selected: [ 1, 5 ]
-      checked: [ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 ]
-      expanded: [ 1, 3, 9 ]
+      selected: [ 1 ]
+      checked: [ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15 ]
+      expanded: [ 1, 3, 10, 11, 12 ]
   - 
     id: 3
     plugin: Base
@@ -291,9 +395,9 @@ views:
           fieldOfView: 0.6978
           near: 0.01
           far: 100
-          eye: [ 3.87036754, 2.93492225, 2.6392299 ]
-          direction: [ -0.845916841, -0.443443713, -0.2962809 ]
-          up: [ -0.262411036, -0.137560241, 0.955100847 ]
+          eye: [ 2.75669976, 0.418977498, 3.01884146 ]
+          direction: [ -0.890867659, 0.0246039222, -0.453596144 ]
+          up: [ -0.453423252, 0.0125226125, 0.891207349 ]
         - 
           camera: [ System, Orthographic ]
           orthoHeight: 20
@@ -333,7 +437,7 @@ views:
       slider: true
       dial: false
       labelOnLeft: true
-      currentBodyItem: 4
+      currentBodyItem: 14
   - 
     id: 8
     plugin: Body
@@ -341,7 +445,7 @@ views:
     mounted: true
     state: 
       listingMode: "Link List"
-      currentBodyItem: 4
+      currentBodyItem: 14
   - 
     id: 9
     plugin: OpenRTM
@@ -364,7 +468,7 @@ toolbars:
     frameRate: 1000
     playbackFrameRate: 50
     idleLoopDrivenMode: false
-    currentTime: 5.223
+    currentTime: 0
     speedScale: 1
     syncToOngoingUpdates: false
     autoExpansion: true
@@ -377,7 +481,7 @@ toolbars:
     penetrationBlockDepth: 0.0005
     lazyCollisionDetectionMode: true
   "BodyBar": 
-    current: 4
+    current: 14
   "LeggedBodyBar": 
     stanceWidth: 0.15
   "BodyMotionGenerationBar": 
@@ -433,6 +537,31 @@ Body:
         showCenterOfMass: false
         showPpcom: false
         showZmp: false
+      - 
+        bodyItem: 10
+        showCenterOfMass: false
+        showPpcom: false
+        showZmp: false
+      - 
+        bodyItem: 11
+        showCenterOfMass: false
+        showPpcom: false
+        showZmp: false
+      - 
+        bodyItem: 12
+        showCenterOfMass: false
+        showPpcom: false
+        showZmp: false
+      - 
+        bodyItem: 13
+        showCenterOfMass: false
+        showPpcom: false
+        showZmp: false
+      - 
+        bodyItem: 14
+        showCenterOfMass: false
+        showPpcom: false
+        showZmp: false
     staticModelEditing: false
   "KinematicFaultChecker": 
     checkJointPositions: true
@@ -475,12 +604,12 @@ viewAreas:
         - 
           type: splitter
           orientation: vertical
-          sizes: [ 1546, 462 ]
+          sizes: [ 1487, 521 ]
           children: 
             - 
               type: splitter
               orientation: horizontal
-              sizes: [ 633, 2434 ]
+              sizes: [ 615, 2452 ]
               children: 
                 - 
                   type: pane
