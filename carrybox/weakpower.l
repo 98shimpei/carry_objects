@@ -2,8 +2,8 @@
 
 ;; (load "package://hrpsys_ros_bridge_tutorials/euslisp/jaxon_red-interface.l")
 ;; (jaxon_red-init)
-(load "jaxonred.l")
-(load "utils.l")
+(load "../jaxonred.l")
+(load "../utils.l")
 (setq *robot* *jaxon_red*)
 (send *robot* :angle-vector (send *ri* :state :potentio-vector))
 (send *ri* :angle-vector (send *ri* :state :potentio-vector))
@@ -30,46 +30,43 @@
 
 (defun update-larm-force (msg)
   (setq *larm-force* (send msg :Wrench :force :y))
+  (print "hoge")
   )
 
 (defun update-rarm-force (msg)
   (setq *rarm-force* (send msg :Wrench :force :y))
+  (print "hoge")
   )
 
 (defun lift-box ()
   (send *ri* :start-impedance :arms :K-r 1000.0 :D-r 200.0 :M-r 1
                                     :K-p 10000.0 :D-p 20000.0 :M-p 1)
-  (setq *larm-force* 0)
-  (setq *rarm-force* 0)
-  (ros::subscribe "lhsensor" geometry_msgs::WrenchStamped #'update-larm-force)
-  (ros::subscribe "rhsensor" geometry_msgs::WrenchStamped #'update-rarm-force)
-  (send *robot* :larm :inverse-kinematics (make-coords :pos #f(420 300 900) :rpy (list 0 0 0)))
-  (send *robot* :rarm :inverse-kinematics (make-coords :pos #f(420 -300 900) :rpy (list 0 0 0)))
+  (send *robot* :rarm :inverse-kinematics (make-coords :pos #f(480 -400 1100) :rpy (list 0 0 (deg2rad 90))))
+  (send *robot* :larm :inverse-kinematics (make-coords :pos #f(480 400 1100) :rpy (list 0 0 (deg2rad -90))))
   (send *ri* :angle-vector (send *robot* :angle-vector) 1500)
   (send *ri* :wait-interpolation)
-  (ros::spin-once)
-  (while (< *larm-force* 40)
-    (print *larm-force*)
-    (send *robot* :arms :move-end-pos #f(0 0 5) :world)
-    (send *ri* :angle-vector (send *robot* :angle-vector) -1 nil 0 :min-time 0.05)
-    (send *ri* :wait-interpolation)
-    (ros::spin-once)
-    )
-  (print *larm-force*)
+  (send *robot* :rarm :inverse-kinematics (make-coords :pos #f(480 -400 1000) :rpy (list 0 0 (deg2rad 90))))
+  (send *robot* :larm :inverse-kinematics (make-coords :pos #f(480 400 1000) :rpy (list 0 0 (deg2rad -90))))
+  (send *ri* :angle-vector (send *robot* :angle-vector) 1500)
+  (send *ri* :wait-interpolation)
+  (send *robot* :rarm :inverse-kinematics (make-coords :pos #f(480 -220 1000) :rpy (list 0 0 (deg2rad 90))))
+  (send *robot* :larm :inverse-kinematics (make-coords :pos #f(480 220 1000) :rpy (list 0 0 (deg2rad -90))))
+  (send *ri* :angle-vector (send *robot* :angle-vector) 1500)
+  (send *ri* :wait-interpolation)
   (send *ri* :set-ref-forces
       (list
-       #f(0 0 900) ;;rleg 1300
-       #f(0 0 900) ;;lleg 1300
+       #f(0 0 700) ;;rleg 1300
+       #f(0 0 700) ;;lleg 1300
        #f(0 0 0) ;;rarm -260
        #f(0 0 0) ;;larm -285
        )
-      3000)
+       3000)
   (unix::sleep 4)
-  (send *robot* :arms :move-end-pos #f(0 0 100) :world)
-  (send *ri* :angle-vector (send *robot* :angle-vector) 1000)
+  (send *robot* :rarm :inverse-kinematics (make-coords :pos #f(480 -220 1200) :rpy (list 0 0 (deg2rad 90))))
+  (send *robot* :larm :inverse-kinematics (make-coords :pos #f(480 220 1200) :rpy (list 0 0 (deg2rad -90))))
+  (send *ri* :angle-vector (send *robot* :angle-vector) 1500)
   (send *ri* :wait-interpolation)
   )
-
 
 (defun monitor-force (leg msg)
   (format t "~A ~A~%" leg (send msg :Wrench :force :z))

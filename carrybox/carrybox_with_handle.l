@@ -2,8 +2,8 @@
 
 ;; (load "package://hrpsys_ros_bridge_tutorials/euslisp/jaxon_red-interface.l")
 ;; (jaxon_red-init)
-(load "jaxonred.l")
-(load "utils.l")
+(load "../jaxonred.l")
+(load "../utils.l")
 (setq *robot* *jaxon_red*)
 (send *robot* :angle-vector (send *ri* :state :potentio-vector))
 (send *ri* :angle-vector (send *ri* :state :potentio-vector))
@@ -11,17 +11,12 @@
 (send *ri* :set-auto-balancer-param
            :is-hand-fix-mode t
            :ik-mode 1)
-(send *ri* :set-auto-balancer-param
-    :use-force-mode :MODE-REF-FORCE-WITH-FOOT
-    :additional-force-applied-link-name "RARM_JOINT7"
-    :additional-force-applied-point-offset #F(0.1 0.3 0)
-    )
 (send *ri* :set-ref-forces
     (list
      #f(0 0 650) ;;rleg 1300
      #f(0 0 650) ;;lleg 1300
-     #f(0 0 0) ;;rarm -260
-     #f(0 0 0) ;;larm -285
+     #f(0 0 -2) ;;rarm -260
+     #f(0 0 -2) ;;larm -285
      )
      1000)
 (unix::sleep 2)
@@ -39,20 +34,30 @@
   )
 
 (defun lift-box ()
-  (send *ri* :start-impedance :arms :K-r 1000.0 :D-r 200.0 :M-r 1
-                                    :K-p 10000.0 :D-p 20000.0 :M-p 1)
-  (send *robot* :rarm :inverse-kinematics (make-coords :pos #f(480 -400 1000) :rpy (list 0 0 (deg2rad 90))))
-  (send *robot* :larm :inverse-kinematics (make-coords :pos #f(480 400 1000) :rpy (list 0 0 (deg2rad -90))))
+  (send *ri* :start-impedance :arms :K-r 200.0 :D-r 100.0 :M-r 1
+                                    :K-p 100.0 :D-p 80.0 :M-p 1) ;; 100 80 1
+  (send *robot* :larm :inverse-kinematics (make-coords :pos #f(570 200 1050) :rpy (list 0 0 0)))
+  (send *robot* :rarm :inverse-kinematics (make-coords :pos #f(570 -200 1050) :rpy (list 0 0 0)))
   (send *ri* :angle-vector (send *robot* :angle-vector) 1500)
   (send *ri* :wait-interpolation)
-  (send *robot* :rarm :inverse-kinematics (make-coords :pos #f(480 -250 1000) :rpy (list 0 0 (deg2rad 90))))
-  (send *robot* :larm :inverse-kinematics (make-coords :pos #f(480 250 1000) :rpy (list 0 0 (deg2rad -90))))
+  (send *robot* :larm :inverse-kinematics (make-coords :pos #f(570 200 1150) :rpy (list 0 0 0)))
+  (send *robot* :rarm :inverse-kinematics (make-coords :pos #f(570 -200 1150) :rpy (list 0 0 0)))
   (send *ri* :angle-vector (send *robot* :angle-vector) 1500)
   (send *ri* :wait-interpolation)
-  (send *robot* :rarm :inverse-kinematics (make-coords :pos #f(480 -250 1100) :rpy (list 0 0 (deg2rad 90))))
-  (send *robot* :larm :inverse-kinematics (make-coords :pos #f(480 250 1100) :rpy (list 0 0 (deg2rad -90))))
+  (send *ri* :set-ref-forces
+      (list
+       #f(0 0 650) ;;rleg 1300
+       #f(0 0 650) ;;lleg 1300
+       #f(0 0 -44) ;;rarm -260
+       #f(0 0 -44) ;;larm -285
+       )
+       3000)
+  (unix::sleep 4)
+  (send *robot* :larm :inverse-kinematics (make-coords :pos #f(570 150 1300) :rpy (list 0 0 0)))
+  (send *robot* :rarm :inverse-kinematics (make-coords :pos #f(570 -150 1300) :rpy (list 0 0 0)))
   (send *ri* :angle-vector (send *robot* :angle-vector) 1500)
   (send *ri* :wait-interpolation)
+  
   )
 
 (defun monitor-force (leg msg)

@@ -24,4 +24,4 @@ links:
               size: [ 2.0, 2.0, 0.02 ]
             appearance:
               material:
-                diffuseColor: [ 0.0, 0.0, 1.0 ]
+                diffuseColor: [ 0.45, 0.30, 0.18 ]
