@@ -10,11 +10,13 @@
   (float-vector (send force :x) (send force :y) (send force :z)))
 
 (defun update-larm (msg)
+  (setq *hogemsg* msg)
   (send *robot* :angle-vector (send *ri* :state :potentio-vector))
   (setq *larm-force* (force->vec (send msg :Wrench :force)))
+  (setq *now_time* (send msg :Header :seq))
   (setq lh-coords (send (car (send *robot* :force-sensors)) :copy-worldcoords))
   (setq *larm-force* (matrix-row (m* (matrix *larm-force*) (transpose (send lh-coords :rot))) 0))
-  (if (not (boundp '*larm-force-offset*)) (setq *larm-force-offset* *larm-force*))
+  (if (not (boundp '*larm-force-offset*)) (progn (setq *larm-force-offset* *larm-force* ) (setq *start_time* *now_time*)))
   (setq *larm-force* (v- *larm-force* *larm-force-offset*))
   (setq *lflag* nil)
   t
@@ -45,7 +47,8 @@
     (setq *lflag* t)
     (setq *rflag* t)
     (if simple
-      (format t "~A ~A ~A ~A ~A ~A~%"
+      (format t "~A ~A ~A ~A ~A ~A ~A~%"
+        (floor (/ (float (- *now_time* *start_time*)) 100.0))
         (floor (elt *larm-force* 0))
         (floor (elt *larm-force* 1))
         (floor (elt *larm-force* 2))
@@ -53,7 +56,8 @@
         (floor (elt *rarm-force* 1))
         (floor (elt *rarm-force* 2))
         )
-      (format t "~A ~A ~A ~A ~A ~A~%"
+      (format t "~A ~A ~A ~A ~A ~A ~A~%"
+        (/ (float (- *now_time* *start_time*)) 100.0)
         (elt *larm-force* 0)
         (elt *larm-force* 1)
         (elt *larm-force* 2)
