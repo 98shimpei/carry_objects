@@ -1,20 +1,20 @@
 format: ChoreonoidBody
 formatVersion: 1.0
 
-name: box1
+name: bigcardboard
 rootLink: body
 links:
   -
     name: body
-    jointType: fixed
-    mass: 12.8  
+    jointType: free
+    mass: 0.4
     inertia: [
-      0.72533, 0,       0,
-      0,       0.08533, 0,
-      0,       0,       0.72533 ]
+      0.04, 0,       0,
+      0,       0.05, 0,
+      0,       0,       0.05 ]
     elements:
       Shape:
-        geometry: { type: Box, size: [ 0.7, 0.4, 0.05 ] }
+        geometry: { type: Box, size: [ 0.50, 1.15, 0.05 ] }
         appearance:
           material:
             diffuseColor: [ 1.0, 1.0, 0.0 ]
