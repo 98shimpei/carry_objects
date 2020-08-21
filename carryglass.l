@@ -11,14 +11,14 @@
 (send *ri* :set-auto-balancer-param
            :is-hand-fix-mode t
            :ik-mode 1)
-(send *ri* :set-ref-forces
-      (list
-       #f(0 0 0) ;;rleg
-       #f(0 0 0) ;;lleg
-       #f(0 0 -0) ;;rarm
-       #f(0 0 0) ;;larm
-       )
-       1000)
+;; (send *ri* :set-ref-forces
+;; (list
+;;        #f(0 0 0) ;;rleg
+;;        #f(0 0 0) ;;lleg
+;;        #f(0 0 -0) ;;rarm
+;;        #f(0 0 0) ;;larm
+;;        )
+;;        1000)
 (send *ri* :start-auto-balancer :limbs '(:rarm :rleg :lleg))
 (send *ri* :start-st)
 
