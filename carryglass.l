@@ -9,7 +9,7 @@
 (send *ri* :angle-vector (send *ri* :state :potentio-vector))
 (start-footguided-modification)
 (send *ri* :set-auto-balancer-param
-           :is-hand-fix-mode t
+           :is-hand-fix-mode nil
            :ik-mode 1)
 ;; (send *ri* :set-ref-forces
 ;; (list
