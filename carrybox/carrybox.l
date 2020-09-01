@@ -25,7 +25,11 @@
      )
      1000)
 (unix::sleep 2)
+(print "press key to start-auto-balancer")
+(read-line)
 (send *ri* :start-auto-balancer :limbs '(:rarm :larm :rleg :lleg))
+(print "press key to start-st")
+(read-line)
 (send *ri* :start-st)
 
 (defun update-larm-force (msg)
@@ -40,30 +44,37 @@
 
 (defun lift-box ()
   (send *ri* :start-impedance :arms :K-r 300.0 :D-r 100.0 :M-r 1
-                                    :K-p 300.0 :D-p 100.0 :M-p 1)
+                                    :K-p 300.0 :D-p 500.0 :M-p 1)
   (send *robot* :rarm :inverse-kinematics (make-coords :pos #f(480 -400 1100) :rpy (list 0 0 (deg2rad 90))))
   (send *robot* :larm :inverse-kinematics (make-coords :pos #f(480 400 1100) :rpy (list 0 0 (deg2rad -90))))
   (send *ri* :angle-vector (send *robot* :angle-vector) 1500)
   (send *ri* :wait-interpolation)
+
   (send *robot* :rarm :inverse-kinematics (make-coords :pos #f(480 -400 1000) :rpy (list 0 0 (deg2rad 90))))
   (send *robot* :larm :inverse-kinematics (make-coords :pos #f(480 400 1000) :rpy (list 0 0 (deg2rad -90))))
   (send *ri* :angle-vector (send *robot* :angle-vector) 1500)
   (send *ri* :wait-interpolation)
+  
+  (print "press key to nip box")
+  (read-line)
   (send *robot* :rarm :inverse-kinematics (make-coords :pos #f(480 -250 1000) :rpy (list 0 0 (deg2rad 90))))
   (send *robot* :larm :inverse-kinematics (make-coords :pos #f(480 250 1000) :rpy (list 0 0 (deg2rad -90))))
   (send *ri* :angle-vector (send *robot* :angle-vector) 1500)
   (send *ri* :wait-interpolation)
+
+  (print "press key to set-ref-forces")
+  (read-line)
   (send *ri* :set-ref-forces
       (list
        #f(0 0 650) ;;rleg 1300
        #f(0 0 650) ;;lleg 1300
-       #f(0 -400 -10) ;;rarm -260
-       #f(0 400 -10) ;;larm -285
+       #f(0 -400 -20) ;;rarm -260
+       #f(0 400 -20) ;;larm -285
        )
        3000)
   (unix::sleep 4)
-  (send *robot* :rarm :inverse-kinematics (make-coords :pos #f(480 -220 1100) :rpy (list 0 0 (deg2rad 90))))
-  (send *robot* :larm :inverse-kinematics (make-coords :pos #f(480 220 1100) :rpy (list 0 0 (deg2rad -90))))
+  (send *robot* :rarm :inverse-kinematics (make-coords :pos #f(480 -220 1200) :rpy (list 0 0 (deg2rad 90))))
+  (send *robot* :larm :inverse-kinematics (make-coords :pos #f(480 220 1200) :rpy (list 0 0 (deg2rad -90))))
   (send *ri* :angle-vector (send *robot* :angle-vector) 1500)
   (send *ri* :wait-interpolation)
   )

@@ -19,7 +19,11 @@
 ;;        #f(0 0 0) ;;larm
 ;;        )
 ;;        1000)
+(print "press key to start-auto-balancer")
+(read-line)
 (send *ri* :start-auto-balancer :limbs '(:rarm :rleg :lleg))
+(print "press key to start-st")
+(read-line)
 (send *ri* :start-st)
 
 

@@ -20,7 +20,11 @@
      )
      1000)
 (unix::sleep 2)
+(print "press key to start-auto-balancer")
+(read-line)
 (send *ri* :start-auto-balancer :limbs '(:rarm :larm :rleg :lleg))
+(print "press key to start-st")
+(read-line)
 (send *ri* :start-st)
 
 (defun update-larm-force (msg)
@@ -35,7 +39,7 @@
 
 (defun lift-box ()
   (send *ri* :start-impedance :arms :K-r 200.0 :D-r 100.0 :M-r 1
-                                    :K-p 10000.0 :D-p 500.0 :M-p 1) ;; 100 80 1
+                                    :K-p 300.0 :D-p 500.0 :M-p 1) ;; 10000 / 300
   (send *robot* :larm :inverse-kinematics (make-coords :pos #f(570 200 1050) :rpy (list 0 0 0)))
   (send *robot* :rarm :inverse-kinematics (make-coords :pos #f(570 -200 1050) :rpy (list 0 0 0)))
   (send *ri* :angle-vector (send *robot* :angle-vector) 1500)
