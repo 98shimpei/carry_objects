@@ -27,19 +27,9 @@
 (read-line)
 (send *ri* :start-st)
 
-(defun update-larm-force (msg)
-  (setq *larm-force* (send msg :Wrench :force :y))
-  (print "hoge")
-  )
-
-(defun update-rarm-force (msg)
-  (setq *rarm-force* (send msg :Wrench :force :y))
-  (print "hoge")
-  )
-
 (defun lift-box ()
   (send *ri* :start-impedance :arms :K-r 200.0 :D-r 100.0 :M-r 1
-                                    :K-p 300.0 :D-p 500.0 :M-p 1) ;; 10000 / 300
+                                    :K-p 100.0 :D-p 100.0 :M-p 1) ;; 10000 / 300
   (send *robot* :larm :inverse-kinematics (make-coords :pos #f(570 200 1050) :rpy (list 0 0 0)))
   (send *robot* :rarm :inverse-kinematics (make-coords :pos #f(570 -200 1050) :rpy (list 0 0 0)))
   (send *ri* :angle-vector (send *robot* :angle-vector) 1500)
@@ -102,6 +92,8 @@
   )
 
 (defun coop ()
+  (send *ri* :start-impedance :arms :K-r 200.0 :D-r 100.0 :M-r 1
+                                    :K-p 100.0 :D-p 50.0 :M-p 1) ;; 10000 / 300
   (ros::roseus "coop")
   (setq *larm-force* #f(0 0 0))
   (setq *rarm-force* #f(0 0 0))
@@ -115,6 +107,10 @@
   (ros::subscribe "lhsensor" geometry_msgs::WrenchStamped #'update-larm)
   (ros::subscribe "rhsensor" geometry_msgs::WrenchStamped #'update-rarm)
   (ros::spin-once)
+  
+  (print "press key to coop_mode")
+  (read-line)
+
   (while (ros::ok)
     (while (or *lflag* *rflag*) (ros::spin-once))
     (setq *lflag* t)
@@ -124,13 +120,14 @@
     (setq dt (- *now_time* *before-time*))
     (setq tmpl (v+ (scale (- 1 (* dt F)) *larm-force-2*) (scale (* F dt) *larm-force-1*)))
     (setq tmpr (v+ (scale (- 1 (* dt F)) *rarm-force-2*) (scale (* F dt) *rarm-force-1*)))
-
-    (setq tmpforce (+ (elt tmpl 1) (elt tmpr 1)))
-    (if (> tmpforce 6)
-      (send *ri* :go-velocity 0 (* tmpforce 0.1) 0)
-      (if (< tmpforce -6)
-        (send *ri* :go-velocity 0 (* tmpforce 0.1) 0)
-        (send *ri* :go-velocity 0 0 0)))
+    (setq tmpforce (v+ tmpl tmpr))
+    (if (< (norm tmpforce) 6.0) (setq tmpforce #f(0 0 0)))
+    (send *ri* :go-velocity (* (elt tmpforce 0) 0.1) (* (elt tmpforce 1) 0.1) 0)
+;;    (if (> tmpforce 6)
+;;      (send *ri* :go-velocity 0 (* tmpforce 0.1) 0)
+;;      (if (< tmpforce -6)
+;;        (send *ri* :go-velocity 0 (* tmpforce 0.1) 0)
+;;        (send *ri* :go-velocity 0 0 0)))
     (format t "~A ~%"
 ;;      (/ (+ (elt *larm-force* 0) (elt *larm-force-1* 0) (elt *larm-force-2* 0)) 3.0)
 ;;      (/ (+ (elt *larm-force* 1) (elt *larm-force-1* 1) (elt *larm-force-2* 1)) 3.0)
