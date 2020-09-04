@@ -68,13 +68,28 @@
       (list
        #f(0 0 650) ;;rleg 1300
        #f(0 0 650) ;;lleg 1300
-       #f(0 -400 -32) ;;rarm -260
-       #f(0 400 -32) ;;larm -285
+       #f(0 -100 -32) ;;rarm -260
+       #f(0 100 -32) ;;larm -285
        )
        3000)
   (unix::sleep 4)
   (send *robot* :rarm :inverse-kinematics (make-coords :pos #f(480 -220 1200) :rpy (list 0 0 (deg2rad 90))))
   (send *robot* :larm :inverse-kinematics (make-coords :pos #f(480 220 1200) :rpy (list 0 0 (deg2rad -90))))
+  (send *ri* :angle-vector (send *robot* :angle-vector) 1500)
+  (send *ri* :wait-interpolation)
+  )
+
+(defun put-box ()
+  (send *ri* :set-ref-forces
+      (list
+       #f(0 0 650) ;;rleg 1300
+       #f(0 0 650) ;;lleg 1300
+       #f(0 0 -2) ;;rarm -260
+       #f(0 0 -2) ;;larm -285
+       )
+       3000)
+  (send *robot* :rarm :inverse-kinematics (make-coords :pos #f(480 -250 1000) :rpy (list 0 0 (deg2rad 90))))
+  (send *robot* :larm :inverse-kinematics (make-coords :pos #f(480 250 1000) :rpy (list 0 0 (deg2rad -90))))
   (send *ri* :angle-vector (send *robot* :angle-vector) 1500)
   (send *ri* :wait-interpolation)
   )

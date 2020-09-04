@@ -58,6 +58,22 @@
 ;;  (send *ri* :wait-interpolation)
   
   )
+
+(defun put-box ()
+  (send *ri* :set-ref-forces
+      (list
+       #f(0 0 650) ;;rleg 1300
+       #f(0 0 650) ;;lleg 1300
+       #f(0 0 -2) ;;rarm -260
+       #f(0 0 -2) ;;larm -285
+       )
+       3000)
+  (send *robot* :larm :inverse-kinematics (make-coords :pos #f(570 200 1300) :rpy (list 0 0 0)))
+  (send *robot* :rarm :inverse-kinematics (make-coords :pos #f(570 -200 1300) :rpy (list 0 0 0)))
+  (send *ri* :angle-vector (send *robot* :angle-vector) 1500)
+  (send *ri* :wait-interpolation)
+  )
+
 (defun hoge ()
   (send *robot* :larm :inverse-kinematics (make-coords :pos #f(630 150 1050) :rpy (list 0 0 0)))
   (send *robot* :rarm :inverse-kinematics (make-coords :pos #f(630 -150 1050) :rpy (list 0 0 0)))
