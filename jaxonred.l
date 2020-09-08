@@ -7,7 +7,8 @@
 
 (defun start-footguided-modification
    ()
- (let* ((step-time 0.7)
+  (print "simulation mode")
+  (let* ((step-time 0.7)
         (double-ratio 0.1))
        (cond ((boundp '*chidori*)
               (send *ri* :set-gait-generator-param
@@ -54,7 +55,8 @@
 
 (defun start-footguided-modification-zikki
    ()
- (let* ((step-time 1.2)
+  (print "real robot mode")
+  (let* ((step-time 1.2)
         (double-ratio 0.2))
        (cond ((boundp '*chidori*)
               (send *ri* :set-gait-generator-param

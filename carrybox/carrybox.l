@@ -4,33 +4,38 @@
 ;; (jaxon_red-init)
 (load "../jaxonred.l")
 (load "../utils.l")
-(setq *robot* *jaxon_red*)
-(send *robot* :angle-vector (send *ri* :state :potentio-vector))
-(send *ri* :angle-vector (send *ri* :state :potentio-vector))
-(start-footguided-modification)
-(send *ri* :set-auto-balancer-param
-           :is-hand-fix-mode t
-           :ik-mode 1)
-;; (send *ri* :set-auto-balancer-param
-;;     :use-force-mode :MODE-REF-FORCE-WITH-FOOT
-;;     :additional-force-applied-link-name "RARM_JOINT7"
-;;     :additional-force-applied-point-offset #F(0.1 0.3 0)
-;;     )
-(send *ri* :set-ref-forces
-    (list
-     #f(0 0 650) ;;rleg 1300
-     #f(0 0 650) ;;lleg 1300
-     #f(0 0 0) ;;rarm -260
-     #f(0 0 0) ;;larm -285
-     )
-     1000)
-(unix::sleep 2)
-(print "press key to start-auto-balancer")
-(read-line)
-(send *ri* :start-auto-balancer :limbs '(:rarm :larm :rleg :lleg))
-(print "press key to start-st")
-(read-line)
-(send *ri* :start-st)
+
+(defun start (&optional (simulation nil))
+  (setq *robot* *jaxon_red*)
+  (send *robot* :angle-vector (send *ri* :state :potentio-vector))
+  (send *ri* :angle-vector (send *ri* :state :potentio-vector))
+  (send *ri* :stop-st)
+  (send *ri* :stop-auto-balancer)
+  (if simulation (start-footguided-modification) (start-footguided-modification-zikki))
+  (send *ri* :set-auto-balancer-param
+             :is-hand-fix-mode t
+             :ik-mode 1)
+  ;; (send *ri* :set-auto-balancer-param
+  ;;     :use-force-mode :MODE-REF-FORCE-WITH-FOOT
+  ;;     :additional-force-applied-link-name "RARM_JOINT7"
+  ;;     :additional-force-applied-point-offset #F(0.1 0.3 0)
+  ;;     )
+  (send *ri* :set-ref-forces
+      (list
+       #f(0 0 650) ;;rleg 1300
+       #f(0 0 650) ;;lleg 1300
+       #f(0 0 0) ;;rarm -260
+       #f(0 0 0) ;;larm -285
+       )
+       1000)
+  (unix::sleep 2)
+  (print "press key to start-auto-balancer")
+  (read-line)
+  (send *ri* :start-auto-balancer :limbs '(:rarm :larm :rleg :lleg))
+  (print "press key to start-st")
+  (read-line)
+  (send *ri* :start-st)
+  )
 
 (defun update-larm-force (msg)
   (setq *larm-force* (send msg :Wrench :force :y))

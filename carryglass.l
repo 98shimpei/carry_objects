@@ -1,30 +1,33 @@
 #!/usr/bin/env roseus
 
-;; (load "package://hrpsys_ros_bridge_tutorials/euslisp/jaxon_red-interface.l")
-;; (jaxon_red-init)
 (load "jaxonred.l")
 (load "utils.l")
-(setq *robot* *jaxon_red*)
-(send *robot* :angle-vector (send *ri* :state :potentio-vector))
-(send *ri* :angle-vector (send *ri* :state :potentio-vector))
-(start-footguided-modification)
-(send *ri* :set-auto-balancer-param
-           :is-hand-fix-mode nil
-           :ik-mode 1)
-;; (send *ri* :set-ref-forces
-;; (list
-;;        #f(0 0 0) ;;rleg
-;;        #f(0 0 0) ;;lleg
-;;        #f(0 0 -0) ;;rarm
-;;        #f(0 0 0) ;;larm
-;;        )
-;;        1000)
-(print "press key to start-auto-balancer")
-(read-line)
-(send *ri* :start-auto-balancer :limbs '(:rarm :rleg :lleg))
-(print "press key to start-st")
-(read-line)
-(send *ri* :start-st)
+
+(defun start (&optional (simulation nil))
+  (setq *robot* *jaxon_red*)
+  (send *robot* :angle-vector (send *ri* :state :potentio-vector))
+  (send *ri* :angle-vector (send *ri* :state :potentio-vector))
+  (send *ri* :stop-st)
+  (send *ri* :stop-auto-balancer)
+  (if simulation (start-footguided-modification) (start-footguided-modification-zikki))
+  (send *ri* :set-auto-balancer-param
+             :is-hand-fix-mode nil
+             :ik-mode 1)
+  ;; (send *ri* :set-ref-forces
+  ;; (list
+  ;;        #f(0 0 0) ;;rleg
+  ;;        #f(0 0 0) ;;lleg
+  ;;        #f(0 0 -0) ;;rarm
+  ;;        #f(0 0 0) ;;larm
+  ;;        )
+  ;;        1000)
+  (print "press key to start-auto-balancer")
+  (read-line)
+  (send *ri* :start-auto-balancer :limbs '(:rarm :rleg :lleg))
+  (print "press key to start-st")
+  (read-line)
+  (send *ri* :start-st)
+  )
 
 
 (defun monitor-force (leg msg)

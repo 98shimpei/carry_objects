@@ -4,32 +4,28 @@
 ;; (jaxon_red-init)
 (load "../jaxonred.l")
 (load "../utils.l")
-(setq *robot* *jaxon_red*)
-(send *robot* :angle-vector (send *ri* :state :potentio-vector))
-(send *ri* :angle-vector (send *ri* :state :potentio-vector))
-(start-footguided-modification)
-(send *ri* :set-auto-balancer-param
-           :is-hand-fix-mode t
-           :ik-mode 1)
-(send *ri* :set-ref-forces
-    (list
-     #f(0 0 650) ;;rleg 1300
-     #f(0 0 650) ;;lleg 1300
-     #f(0 0 -2) ;;rarm -260
-     #f(0 0 -2) ;;larm -285
-     )
-     1000)
-(unix::sleep 2)
-(print "press key to start-auto-balancer")
-(read-line)
-(send *ri* :start-auto-balancer :limbs '(:rarm :larm :rleg :lleg))
-(print "press key to start-st")
-(read-line)
-(send *ri* :start-st)
+
+(defun start (&optional (simulation nil))
+  (setq *robot* *jaxon_red*)
+  (send *robot* :angle-vector (send *ri* :state :potentio-vector))
+  (send *ri* :angle-vector (send *ri* :state :potentio-vector))
+  (send *ri* :stop-st)
+  (send *ri* :stop-auto-balancer)
+  (if simulation (start-footguided-modification) (start-footguided-modification-zikki))
+  (send *ri* :set-auto-balancer-param
+             :is-hand-fix-mode t
+             :ik-mode 1)
+  (print "press key to start-auto-balancer")
+  (read-line)
+  (send *ri* :start-auto-balancer :limbs '(:rarm :larm :rleg :lleg))
+  (print "press key to start-st")
+  (read-line)
+  (send *ri* :start-st)
+  )
 
 (defun lift-box ()
   (send *ri* :start-impedance :arms :K-r 200.0 :D-r 100.0 :M-r 1
-                                    :K-p 100.0 :D-p 100.0 :M-p 1) ;; 10000 / 300
+                                    :K-p 500.0 :D-p 200.0 :M-p 1) ;; 10000 / 300
   (send *robot* :larm :inverse-kinematics (make-coords :pos #f(570 200 1050) :rpy (list 0 0 0)))
   (send *robot* :rarm :inverse-kinematics (make-coords :pos #f(570 -200 1050) :rpy (list 0 0 0)))
   (send *ri* :angle-vector (send *robot* :angle-vector) 1500)
