@@ -24,7 +24,7 @@ links:
         translation: [ 0, 0, 0.13 ]
         elements:
           Shape:
-            geometry: { type: Box, size: [ 0.70, 0.20, 0.08 ] }
+            geometry: { type: Box, size: [ 0.70, 0.23, 0.08 ] }
             appearance:
               material:
                 diffuseColor: [ 1.0, 0.0, 0.0 ]

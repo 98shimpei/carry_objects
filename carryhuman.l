@@ -81,7 +81,7 @@
 
 (send *ri* :set-auto-balancer-param
       :use-force-mode :MODE-REF-FORCE-WITH-FOOT
-      :additional-force-applied-link-name "RLEG_JOINT3"
+      :additional-force-applied-link-name "RARM_JOINT3"
       :additional-force-applied-point-offset #F(0 0.1 0)
       )
 (send *ri* :set-ref-forces

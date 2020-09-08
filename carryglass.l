@@ -13,19 +13,15 @@
   (send *ri* :set-auto-balancer-param
              :is-hand-fix-mode nil
              :ik-mode 1)
-  ;; (send *ri* :set-ref-forces
-  ;; (list
-  ;;        #f(0 0 0) ;;rleg
-  ;;        #f(0 0 0) ;;lleg
-  ;;        #f(0 0 -0) ;;rarm
-  ;;        #f(0 0 0) ;;larm
-  ;;        )
-  ;;        1000)
-  (print "press key to start-auto-balancer")
-  (read-line)
+  (if (not simulation) (let ()
+    (print "press key to start-auto-balancer")
+    (read-line)
+    ))
   (send *ri* :start-auto-balancer :limbs '(:rarm :rleg :lleg))
-  (print "press key to start-st")
-  (read-line)
+  (if (not simulation) (let ()
+    (print "press key to start-st")
+    (read-line)
+    ))
   (send *ri* :start-st)
   )
 
