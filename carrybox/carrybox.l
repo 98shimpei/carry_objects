@@ -31,13 +31,13 @@
   (setq *state* 'put)
   )
 
-(defun lift-box (box_weight)
+(defun lift-box (box_weight &optional (nip_force 100) (box_width 480))
   (unless (string= *state* 'put)
     (print "robot carries box now")
     (return-from lift-box nil))
   (setq *state* 'lift-box)
   (send *ri* :start-impedance :arms :K-r 300.0 :D-r 100.0 :M-r 1
-                                    :K-p 300.0 :D-p 500.0 :M-p 1)
+                                    :K-p 300.0 :D-p 300.0 :M-p 1)
   (send *robot* :rarm :inverse-kinematics (make-coords :pos #f(480 -400 1100) :rpy (list 0 0 (deg2rad 90)))) 
   (send *robot* :larm :inverse-kinematics (make-coords :pos #f(480 400 1100) :rpy (list 0 0 (deg2rad -90)))) 
   (send *ri* :angle-vector (send *robot* :angle-vector) 1500)
@@ -50,8 +50,8 @@
 
   (print "press key to nip box")
   (read-line)
-  (send *robot* :rarm :inverse-kinematics (make-coords :pos #f(480 -250 1000) :rpy (list 0 0 (deg2rad 90))))
-  (send *robot* :larm :inverse-kinematics (make-coords :pos #f(480 250 1000) :rpy (list 0 0 (deg2rad -90))))
+  (send *robot* :rarm :inverse-kinematics (make-coords :pos (float-vector 480 (/ box_width -2.0) 1000) :rpy (list 0 0 (deg2rad 90))))
+  (send *robot* :larm :inverse-kinematics (make-coords :pos (float-vector 480 (/ box_width  2.0) 1000) :rpy (list 0 0 (deg2rad -90))))
   (send *ri* :angle-vector (send *robot* :angle-vector) 1500)
   (send *ri* :wait-interpolation)
 
@@ -61,13 +61,13 @@
       (list
        #f(0 0 650) ;;rleg 1300
        #f(0 0 650) ;;lleg 1300
-       (float-vector 0 -100 (* -1.0 (+ 2.0 (* box_weight 4.9)))) ;;rarm -260  mg/2
-       (float-vector 0  100 (* -1.0 (+ 2.0 (* box_weight 4.9)))) ;;larm -285
+       (float-vector 0 (* -1 nip_force) (* -1.0 (+ 2.0 (* box_weight 4.9)))) ;;rarm -260  mg/2
+       (float-vector 0 (*  1 nip_force) (* -1.0 (+ 2.0 (* box_weight 4.9)))) ;;larm -285
        )
        3000)
   (unix::sleep 4)
-  (send *robot* :rarm :inverse-kinematics (make-coords :pos #f(480 -220 1200) :rpy (list 0 0 (deg2rad 90))))
-  (send *robot* :larm :inverse-kinematics (make-coords :pos #f(480 220 1200) :rpy (list 0 0 (deg2rad -90))))
+  (send *robot* :rarm :inverse-kinematics (make-coords :pos (float-vector 480 (/ box_width -2.0) 1150) :rpy (list 0 0 (deg2rad 90))))
+  (send *robot* :larm :inverse-kinematics (make-coords :pos (float-vector 480 (/ box_width  2.0) 1150) :rpy (list 0 0 (deg2rad -90))))
   (send *ri* :angle-vector (send *robot* :angle-vector) 1500)
   (send *ri* :wait-interpolation)
   )
@@ -78,7 +78,7 @@
     (return-from lift-box-with-handle nil))
   (setq *state* 'lift-box-with-handle)
   (send *ri* :start-impedance :arms :K-r 200.0 :D-r 100.0 :M-r 1
-                                    :K-p 500.0 :D-p 200.0 :M-p 1) ;; 10000 / 300
+                                    :K-p 300.0 :D-p 300.0 :M-p 1) ;; 10000 / 300
   (send *robot* :larm :inverse-kinematics (make-coords :pos #f(570 200 1050) :rpy (list 0 0 0)))
   (send *robot* :rarm :inverse-kinematics (make-coords :pos #f(570 -200 1050) :rpy (list 0 0 0)))
   (send *ri* :angle-vector (send *robot* :angle-vector) 1500)
@@ -124,8 +124,8 @@
          #f(0 0 -2) ;;larm -285
          )
          3000)
-    (send *robot* :rarm :inverse-kinematics (make-coords :pos #f(480 -300 1100) :rpy (list 0 0 (deg2rad 90))))
-    (send *robot* :larm :inverse-kinematics (make-coords :pos #f(480 300 1100) :rpy (list 0 0 (deg2rad -90))))
+    (send *robot* :rarm :inverse-kinematics (make-coords :pos #f(480 -350 1100) :rpy (list 0 0 (deg2rad 90))))
+    (send *robot* :larm :inverse-kinematics (make-coords :pos #f(480 350 1100) :rpy (list 0 0 (deg2rad -90))))
     (send *ri* :angle-vector (send *robot* :angle-vector) 1500)
     (send *ri* :wait-interpolation)
     (setq *state* 'put)
@@ -177,7 +177,7 @@
 
 (defun coop ()
   (send *ri* :start-impedance :arms :K-r 200.0 :D-r 100.0 :M-r 1
-                                    :K-p 500.0 :D-p 300.0 :M-p 1) ;; 10000 / 300
+                                    :K-p 300.0 :D-p 300.0 :M-p 1) ;; 10000 / 300
   (ros::roseus "coop")
   (setq *larm-force* #f(0 0 0))
   (setq *rarm-force* #f(0 0 0))
