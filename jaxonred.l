@@ -1,4 +1,5 @@
 (require "package://hrpsys_ros_bridge_tutorials/euslisp/jaxon_red-interface.l")
+(load "package://control_tools/play-hrpsysfile.l")
 (unless (boundp '*jaxon_red*)
   (jaxon_red-init)
   (setq *robot* *jaxon_red*)
@@ -65,8 +66,8 @@
                     ))
              ((boundp '*jaxon_red*)
               (send *ri* :set-gait-generator-param
-                    :leg-margin #f(0.12 0.09 0.05 0.05) 
-                    :safe-leg-margin #f(0.07 0.055 0.05 0.05)
+                    :leg-margin #f(0.115 0.115 0.05 0.05) 
+                    :safe-leg-margin #f(0.07 0.007 0.05 0.05)
                     :dcm-offset 0.01
                     ))
              ((boundp '*rhp4b*)
@@ -83,13 +84,13 @@
              :default-step-height 0.05
              :default-step-time step-time
              :default-double-support-ratio double-ratio
-             :swing-trajectory-delay-time-offset (* step-time (- 1.0 double-ratio) 0.25)
+             :swing-trajectory-delay-time-offset (* step-time (- 1.0 double-ratio) 0.3)
              :overwritable-stride-limitation #f(0.35 0.5 0 0.35 0.14)
              :margin-time-ratio 0.1
              :min-time-mgn 0.3
              :min-time 1.0
              :use-disturbance-compensation nil
-             :zmp-delay-time-const 0.05
+             :zmp-delay-time-const 0.0
              :dc-gain 1e-3
              :emergency-step-time #f(0.08 0.6 0.7)
              :use-act-states nil
