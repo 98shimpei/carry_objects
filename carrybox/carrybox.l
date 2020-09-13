@@ -37,7 +37,7 @@
     (return-from lift-box nil))
   (setq *state* 'lift-box)
   (send *ri* :stop-impedance :arms)
-  (send *ri* :start-impedance :arms :K-r 50.0 :D-r 50.0 :M-r 1
+  (send *ri* :start-impedance :arms :K-r 100.0 :D-r 100.0 :M-r 1
                                     :K-p 1000.0 :D-p 500.0 :M-p 5)
   (send *robot* :rarm :inverse-kinematics (make-coords :pos #f(480 -400 1100) :rpy (list 0 0 (deg2rad -90)))) 
   (send *robot* :larm :inverse-kinematics (make-coords :pos #f(480 400 1100) :rpy (list 0 0 (deg2rad 90)))) 
@@ -81,7 +81,7 @@
   (setq *state* 'lift-box-with-handle)
   (send *ri* :stop-impedance :arms)
   (send *ri* :start-impedance :arms :K-r 200.0 :D-r 100.0 :M-r 5
-                                    :K-p 300.0 :D-p 200.0 :M-p 5) ;; 10000 / 300
+                                    :K-p 300.0 :D-p 300.0 :M-p 5) ;; 10000 / 300
   (send *robot* :larm :inverse-kinematics (make-coords :pos #f(570 200 1050) :rpy (list 0 0 0)))
   (send *robot* :rarm :inverse-kinematics (make-coords :pos #f(570 -200 1050) :rpy (list 0 0 0)))
   (send *ri* :angle-vector (send *robot* :angle-vector) 3000)
@@ -182,7 +182,7 @@
   (when (string= *state* 'put)
     (send *ri* :stop-impedance :arms)
     (send *ri* :start-impedance :arms :K-r 200.0 :D-r 200.0 :M-r 5
-                                    :K-p 200.0 :D-p 70.0 :M-p 5) ;; 10000 / 300
+                                    :K-p 100.0 :D-p 250.0 :M-p 5) ;; 10000 / 300
     (send *robot* :larm :inverse-kinematics (make-coords :pos #f(470 200 1050) :rpy (list 0 0 0)))
     (send *robot* :rarm :inverse-kinematics (make-coords :pos #f(470 -200 1050) :rpy (list 0 0 0)))
     (send *ri* :angle-vector (send *robot* :angle-vector) 3000)
@@ -209,7 +209,7 @@
   (while (or *lflag* *rflag*) (ros::spin-once))
   (setq *lflag* t)
   (setq *rflag* t)
-  (setq *now_time* (/ (float *now_time*) 100.0))
+  (setq *now_time* (/ (float *now_time*) 300.0))
   (setq *larm-force-2* *larm-force*)
   (setq *larm-force-1* *larm-force*)
   (setq *rarm-force-2* *rarm-force*)
@@ -232,8 +232,8 @@
     (when (= init_cycle 0) (setq init_cycle -1) (setq force_offset tmpforce) (print "coop init finish"))
     (when (< init_cycle 0)
       (setq tmpforce (v- tmpforce force_offset))
-      (if (< (norm tmpforce) 3.0) (setq tmpforce #f(0 0 0)))
-      (send *ri* :go-velocity (* (elt tmpforce 0) 0.05) (* (elt tmpforce 1) 0.0) 0)
+      (if (< (norm tmpforce) 4.0) (setq tmpforce #f(0 0 0)))
+      (send *ri* :go-velocity (* (elt tmpforce 0) 0.008) (* (elt tmpforce 1) 0.005) 0)
       (format t "~A ~A ~%"
         (elt tmpforce 0)
         (elt tmpforce 1)
