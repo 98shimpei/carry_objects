@@ -67,7 +67,7 @@
              ((boundp '*jaxon_red*)
               (send *ri* :set-gait-generator-param
                     :leg-margin #f(0.115 0.115 0.065 0.065) 
-                    :safe-leg-margin #f(0.07 0.07 0.065 0.065)
+                    :safe-leg-margin #f(0.06 0.07 0.065 0.065)
                     :dcm-offset 0.02
                     ))
              ((boundp '*rhp4b*)
@@ -86,7 +86,7 @@
              :default-double-support-ratio double-ratio
              :swing-trajectory-delay-time-offset (* step-time (- 1.0 double-ratio) 0.3)
              :overwritable-stride-limitation #f(0.25 0.4 0 0.25 0.14)
-             :margin-time-ratio 0.1
+             :margin-time-ratio 0.2
              :min-time-mgn 0.3
              :min-time 1.0
              :use-disturbance-compensation nil
@@ -95,11 +95,13 @@
              :emergency-step-time #f(0.08 0.6 0.7)
              :use-act-states t
              :modify-footsteps t
+	           ;; :fg-zmp-cutoff-freq 10
              )
        (send *ri* :set-auto-balancer-param
              :is-emergency-step-mode nil
              :is-emergency-touch-wall-mode nil
              :touch-wall-retrieve-time 0.4
+             :default-zmp-offsets (list #f(-10 20.0 0.0) #f(-10 -20.0 0.0) #f(0 0 0) #f(0 0 0))
              )
        ))
 
@@ -129,3 +131,6 @@
   )
 
 ;; (start-footguided-modification)
+
+(send *ri* :set-log-maxlength 150000)
+(send *ri* :start-log)
