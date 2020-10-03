@@ -31,13 +31,13 @@
              )
        (send *ri* :set-gait-generator-param
              :stride-limitation-type 1
-             :stride-limitation-for-circle-type #f(0.15 0.3 15 0.1 0.14)
+             :stride-limitation-for-circle-type #f(0.15 0.3 15 0.1 0.09)
              :default-orbit-type :rectangle
              :default-step-height 0.05
              :default-step-time step-time
              :default-double-support-ratio double-ratio
              :swing-trajectory-delay-time-offset (* step-time (- 1.0 double-ratio) 0.25)
-             :overwritable-stride-limitation #f(0.35 0.5 0 0.35 0.14)
+             :overwritable-stride-limitation #f(0.35 0.5 0 0.35 0.09)
              :margin-time-ratio 0.1
              :min-time-mgn 0.3
              :min-time 0.6
@@ -79,13 +79,13 @@
              )
        (send *ri* :set-gait-generator-param
              :stride-limitation-type 1
-             :stride-limitation-for-circle-type #f(0.15 0.3 15 0.1 0.14)
+             :stride-limitation-for-circle-type #f(0.15 0.3 15 0.1 0.09)
              :default-orbit-type :rectangle
              :default-step-height 0.05
              :default-step-time step-time
              :default-double-support-ratio double-ratio
              :swing-trajectory-delay-time-offset (* step-time (- 1.0 double-ratio) 0.3)
-             :overwritable-stride-limitation #f(0.25 0.4 0 0.25 0.14)
+             :overwritable-stride-limitation #f(0.25 0.4 0 0.25 0.09)
              :margin-time-ratio 0.2
              :min-time-mgn 0.3
              :min-time 1.0
@@ -101,7 +101,7 @@
              :is-emergency-step-mode nil
              :is-emergency-touch-wall-mode nil
              :touch-wall-retrieve-time 0.4
-             :default-zmp-offsets (list #f(-10 20.0 0.0) #f(-10 -20.0 0.0) #f(0 0 0) #f(0 0 0))
+             :default-zmp-offsets (list #f(0 20.0 0.0) #f(0 -20.0 0.0) #f(0 0 0) #f(0 0 0))
              )
        ))
 
