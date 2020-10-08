@@ -22,10 +22,10 @@
     )
 
 (defun go-coop-pose ()
-  (send *robot* :larm :inverse-kinematics (make-coords :pos #f(470 200 1050) :rpy (list 0 0 0)))
-    (send *robot* :rarm :inverse-kinematics (make-coords :pos #f(470 -200 1050) :rpy (list 0 0 0)))
-    (send *ri* :angle-vector (send *robot* :angle-vector) 3000)
-    (send *ri* :wait-interpolation)
+  (send *robot* :larm :inverse-kinematics (make-coords :pos #f(520 100 1100) :rpy (list 0 0 0)))
+  (send *robot* :rarm :inverse-kinematics (make-coords :pos #f(520 -100 1100) :rpy (list 0 0 0)))
+  (send *ri* :angle-vector (send *robot* :angle-vector) 3000)
+  (send *ri* :wait-interpolation)
   )
 
 (defun go-reset-pose ()

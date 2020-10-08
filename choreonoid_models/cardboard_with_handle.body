@@ -15,16 +15,16 @@ links:
     elements:
       -
         type: Shape
-        geometry: { type: Box, size: [ 0.10, 0.35, 0.34 ] }
+        geometry: { type: Box, size: [ 0.05, 0.35, 0.34 ] }
         appearance:
           material:
             diffuseColor: [ 1.0, 0.0, 0.0 ]
       -
         type: Transform
-        translation: [ 0, 0, 0.13 ]
+        translation: [ 0, 0, 0.15 ]
         elements:
           Shape:
-            geometry: { type: Box, size: [ 0.70, 0.23, 0.08 ] }
+            geometry: { type: Box, size: [ 0.48, 0.23, 0.04 ] }
             appearance:
               material:
                 diffuseColor: [ 1.0, 0.0, 0.0 ]
