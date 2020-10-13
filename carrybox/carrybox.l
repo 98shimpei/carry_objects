@@ -4,7 +4,7 @@
 (load "../utils.l")
 
 (defun start (&optional (simulation nil))
-  (if simulation (setq *simulation_mode* t))
+  (if simulation (setq *simulation_mode* t) (setq *simulation_mode* nil))
   (setq *robot* *jaxon_red*)
   (send *robot* :angle-vector (send *ri* :state :potentio-vector))
   (send *ri* :angle-vector (send *robot* :reset-pose))
@@ -40,7 +40,7 @@
   (setq *state* 'put)
   )
 
-(defun lift-box (box_weight &optional (nip_force 50) (box_width 310))
+(defun lift-box (&optional (nip_force 50) (box_width 310))
   (unless (string= *state* 'put)
     (print "robot carries box now")
     (return-from lift-box nil))
@@ -68,6 +68,7 @@
 
   (print "press key to set-ref-forces")
   (read-line)
+  (setq box_weight (send (send *ri* :get-box-weight) :operation_return))
   (send *ri* :set-ref-forces
       (list
        (float-vector 0 0 (* (+ (send *robot* :weight) box_weight) 4.9)) 
@@ -83,7 +84,7 @@
   (send *ri* :wait-interpolation)
   )
 
-(defun lift-box-with-handle (box_weight)
+(defun lift-box-with-handle ()
   (unless (string= *state* 'put)
     (print "robot carries box now")
     (return-from lift-box-with-handle nil))
@@ -102,6 +103,7 @@
   (print "press key to set-ref-forces")
   (read-line)
   (unix:sleep 10)
+  (setq box_weight (send (send *ri* :get-box-weight) :operation_return))
   (send *ri* :set-ref-forces
       (list
        (float-vector 0 0 (* (+ (send *robot* :weight) box_weight) 4.9)) 
@@ -123,30 +125,31 @@
   
   )
 
-(defun lift-box-side (box_weight)
+(defun lift-box-side ()
   (unless (string= *state* 'put)
     (print "robot carries box now")
     (return-from lift-box-side nil))
   (setq *state* 'lift-box-side)
   (send *robot* :larm :inverse-kinematics (make-coords :pos #f(450 350 1100) :rpy (list 0 0 0)))
   (send *robot* :rarm :inverse-kinematics (make-coords :pos #f(450 -350 1100) :rpy (list 0 0 0)))
-  (send *ri* :angle-vector (send *robot* :angle-vector) 3000)
+  (send *ri* :angle-vector (send *robot* :angle-vector) 10000)
   (send *ri* :wait-interpolation)
   (if *simulation_mode* (send *ri* :go-pos 0.1 0 0))
-  (send *robot* :larm :inverse-kinematics (make-coords :pos #f(380 180 1100) :rpy (list (deg2rad -90) 0 0)))
-  (send *robot* :rarm :inverse-kinematics (make-coords :pos #f(380 -180 1100) :rpy (list (deg2rad 90) 0 0)))
-  (send *ri* :angle-vector (send *robot* :angle-vector) 3000)
+  (send *robot* :larm :inverse-kinematics (make-coords :pos #f(380 135 1100) :rpy (list (deg2rad -90) 0 0)))
+  (send *robot* :rarm :inverse-kinematics (make-coords :pos #f(380 -135 1100) :rpy (list (deg2rad 90) 0 0)))
+  (send *ri* :angle-vector (send *robot* :angle-vector) 10000)
   (send *ri* :wait-interpolation)
   (send *ri* :stop-impedance :arms)
   (send *ri* :start-impedance :arms :K-r 200.0 :D-r 200.0 :M-r 5
                                     :K-p 1000.0 :D-p 1000.0 :M-p 5) ;; 10000 / 300
-  (send *robot* :larm :inverse-kinematics (make-coords :pos #f(380 180 1150) :rpy (list (deg2rad -90) 0 0)))
-  (send *robot* :rarm :inverse-kinematics (make-coords :pos #f(380 -180 1150) :rpy (list (deg2rad 90) 0 0)))
+  (send *robot* :larm :inverse-kinematics (make-coords :pos #f(380 135 1150) :rpy (list (deg2rad -90) 0 0)))
+  (send *robot* :rarm :inverse-kinematics (make-coords :pos #f(380 -135 1150) :rpy (list (deg2rad 90) 0 0)))
   (send *ri* :angle-vector (send *robot* :angle-vector) 3000)
   (send *ri* :wait-interpolation)
   (print "press key to set-ref-forces")
   (read-line)
-  (unix:sleep 10)
+  (unix:sleep 3)
+  (setq box_weight (send (send *ri* :get-box-weight) :operation_return))
   (send *ri* :set-ref-forces
       (list
        (float-vector 0 0 (* (+ (send *robot* :weight) box_weight) 4.9)) 
@@ -156,13 +159,13 @@
        )
        3000)
   (unix::sleep 4)
-  (send *robot* :larm :inverse-kinematics (make-coords :pos #f(400 180 1250) :rpy (list (deg2rad -90) 0 0)))
-  (send *robot* :rarm :inverse-kinematics (make-coords :pos #f(400 -180 1250) :rpy (list (deg2rad 90) 0 0)))
-  (send *ri* :angle-vector (send *robot* :angle-vector) 3000)
-  (send *ri* :wait-interpolation)
+  ;; (send *robot* :larm :inverse-kinematics (make-coords :pos #f(400 135 1200) :rpy (list (deg2rad -90) 0 0)))
+  ;; (send *robot* :rarm :inverse-kinematics (make-coords :pos #f(400 -135 1200) :rpy (list (deg2rad 90) 0 0)))
+  ;; (send *ri* :angle-vector (send *robot* :angle-vector) 3000)
+  ;; (send *ri* :wait-interpolation)
   (if *simulation_mode* (send *ri* :go-pos -1 0 0))
-  (send *robot* :larm :inverse-kinematics (make-coords :pos #f(350 180 1050) :rpy (list (deg2rad -90) 0 0)))
-  (send *robot* :rarm :inverse-kinematics (make-coords :pos #f(350 -180 1050) :rpy (list (deg2rad 90) 0 0)))
+  (send *robot* :larm :inverse-kinematics (make-coords :pos #f(300 135 1050) :rpy (list (deg2rad -90) 0 0)))
+  (send *robot* :rarm :inverse-kinematics (make-coords :pos #f(300 -135 1050) :rpy (list (deg2rad 90) 0 0)))
   (send *ri* :angle-vector (send *robot* :angle-vector) 3000)
   (send *ri* :wait-interpolation)
   
