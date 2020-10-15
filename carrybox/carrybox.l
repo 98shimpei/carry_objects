@@ -94,12 +94,12 @@
   (send *ri* :stop-impedance :arms)
   (send *ri* :start-impedance :arms :K-r 200.0 :D-r 200.0 :M-r 5
                                     :K-p 100.0 :D-p 100.0 :M-p 5) ;; 10000 / 300
-  (send *robot* :larm :inverse-kinematics (make-coords :pos #f(470 100 1000) :rpy (list 0 0 0)))
-  (send *robot* :rarm :inverse-kinematics (make-coords :pos #f(470 -100 1000) :rpy (list 0 0 0)))
+  (send *robot* :larm :inverse-kinematics (make-coords :pos #f(470 110 1000) :rpy (list 0 0 0)))
+  (send *robot* :rarm :inverse-kinematics (make-coords :pos #f(470 -110 1000) :rpy (list 0 0 0)))
   (send *ri* :angle-vector (send *robot* :angle-vector) 3000)
   (send *ri* :wait-interpolation)
-  (send *robot* :larm :inverse-kinematics (make-coords :pos #f(470 100 1100) :rpy (list 0 0 0)))
-  (send *robot* :rarm :inverse-kinematics (make-coords :pos #f(470 -100 1100) :rpy (list 0 0 0)))
+  (send *robot* :larm :inverse-kinematics (make-coords :pos #f(470 110 1100) :rpy (list 0 0 0)))
+  (send *robot* :rarm :inverse-kinematics (make-coords :pos #f(470 -110 1100) :rpy (list 0 0 0)))
   (send *ri* :angle-vector (send *robot* :angle-vector) 4000)
   (send *ri* :wait-interpolation)
   (print "press key to set-ref-forces")
@@ -116,8 +116,8 @@
        )
        3000)
   (unix::sleep 4)
-  (send *robot* :larm :inverse-kinematics (make-coords :pos #f(470 100 1100) :rpy (list 0 0 0)))
-  (send *robot* :rarm :inverse-kinematics (make-coords :pos #f(470 -100 1100) :rpy (list 0 0 0)))
+  (send *robot* :larm :inverse-kinematics (make-coords :pos #f(470 110 1100) :rpy (list 0 0 0)))
+  (send *robot* :rarm :inverse-kinematics (make-coords :pos #f(470 -110 1100) :rpy (list 0 0 0)))
   (send *ri* :angle-vector (send *robot* :angle-vector) 3000)
   (send *ri* :wait-interpolation)
   
