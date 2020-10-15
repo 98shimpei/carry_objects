@@ -37,6 +37,7 @@
     (read-line)
     ))
   (send *ri* :start-st)
+  (if simulation (send *ri* :remove-force-sensor-offset-rmfo-arms))
   (setq *state* 'put)
   )
 
@@ -69,6 +70,7 @@
   (print "press key to set-ref-forces")
   (read-line)
   (setq box_weight (send (send *ri* :get-box-weight) :operation_return))
+  (print box_weight)
   (send *ri* :set-ref-forces
       (list
        (float-vector 0 0 (* (+ (send *robot* :weight) box_weight) 4.9)) 
@@ -104,6 +106,7 @@
   (read-line)
   (unix:sleep 10)
   (setq box_weight (send (send *ri* :get-box-weight) :operation_return))
+  (print box_weight)
   (send *ri* :set-ref-forces
       (list
        (float-vector 0 0 (* (+ (send *robot* :weight) box_weight) 4.9)) 
@@ -150,6 +153,7 @@
   (read-line)
   (unix:sleep 3)
   (setq box_weight (send (send *ri* :get-box-weight) :operation_return))
+  (print box_weight)
   (send *ri* :set-ref-forces
       (list
        (float-vector 0 0 (* (+ (send *robot* :weight) box_weight) 4.9)) 
