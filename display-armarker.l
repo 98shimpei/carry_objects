@@ -17,13 +17,13 @@
 
 ;;; 表示モデルなど
 (load "models/chessboard-30-7x5-object.l")
-(if (not (boundp '*irtviewer*)) (make-irtviewer))
+(if use-display (if (not (boundp '*irtviewer*)) (make-irtviewer)))
 (setq *target-object* (chessboard-30-7x5 :name "/test_object"))
-(objects (list *target-object* *jaxon_red*))
+(if use-display (objects (list *target-object* *jaxon_red*)))
 
 (setq *tfb* (instance ros::transform-broadcaster :init))
 
-(if use-display (ros::roseus "objectdetection_client"))
+(ros::roseus "objectdetection_client")
 
 ;; ObjectDetection用コールバック関数定義
 (defun objectdetection-cb (msg)
