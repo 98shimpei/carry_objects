@@ -15,8 +15,11 @@ import yaml
 from sensor_msgs.msg import CameraInfo
 
 info_yaml = rospy.get_param("/camera_info_pub/info_yaml", "camera.yaml")
+rospy.init_node("camera_info_publisher", anonymous=True)
+publisher = rospy.Publisher("dummy/camera_info", CameraInfo, queue_size=1)
 
-def yaml_to_CameraInfo(yaml_fname):
+def yaml_to_CameraInfo(msg):
+    yaml_fname = info_yaml
     """
     Parse a yaml file containing camera calibration data (as produced by 
     rosrun camera_calibration cameracalibrator.py) into a 
@@ -37,6 +40,7 @@ def yaml_to_CameraInfo(yaml_fname):
         calib_data = yaml.load(file_handle)
     # Parse
     camera_info_msg = CameraInfo()
+    camera_info_msg.header = msg.header
     camera_info_msg.width = calib_data["image_width"]
     camera_info_msg.height = calib_data["image_height"]
     camera_info_msg.K = calib_data["camera_matrix"]["data"]
@@ -44,7 +48,8 @@ def yaml_to_CameraInfo(yaml_fname):
     camera_info_msg.R = calib_data["rectification_matrix"]["data"]
     camera_info_msg.P = calib_data["projection_matrix"]["data"]
     camera_info_msg.distortion_model = calib_data["distortion_model"]
-    return camera_info_msg
+    publisher.publish(camera_info_msg)
+    #return camera_info_msg
 
 # Get fname from command line (cmd line input required)
 #import argparse
@@ -53,17 +58,16 @@ def yaml_to_CameraInfo(yaml_fname):
 #                                         "camera calibration data")
 #args = arg_parser.parse_args()
 #filename = args.filename
-filename = info_yaml
+#filename = info_yaml
 
 # Parse yaml file
-camera_info_msg = yaml_to_CameraInfo(filename)
+#camera_info_msg = yaml_to_CameraInfo(filename)
 
 # Initialize publisher node
-rospy.init_node("camera_info_publisher", anonymous=True)
-publisher = rospy.Publisher("dummy/camera_info", CameraInfo, queue_size=10)
-rate = rospy.Rate(10)
 
+rospy.Subscriber("multisense_local/left/camera_info", CameraInfo, yaml_to_CameraInfo)
+rospy.spin()
 # Run publisher
-while not rospy.is_shutdown():
-    publisher.publish(camera_info_msg)
-    rate.sleep()
+#while not rospy.is_shutdown():
+#    publisher.publish(camera_info_msg)
+#    rate.sleep()
