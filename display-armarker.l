@@ -13,11 +13,13 @@
 (ros::roseus-add-msgs "hrpsys_ros_bridge")
 (ros::roseus-add-msgs "ar_track_alvar_msgs")
 
+(setq use-display (ros::get-param "~use_display" t))
+
 ;;; 表示モデルなど
 (load "models/chessboard-30-7x5-object.l")
-(if (not (boundp '*irtviewer*)) (make-irtviewer))
+(if use-display (if (not (boundp '*irtviewer*)) (make-irtviewer)))
 (setq *target-object* (chessboard-30-7x5 :name "/test_object"))
-(objects (list *target-object* *jaxon_red*))
+(if use-display (objects (list *target-object* *jaxon_red*)))
 
 (setq *tfb* (instance ros::transform-broadcaster :init))
 
@@ -61,8 +63,8 @@
 (ros::rate 10)
 (do-until-key
   (ros::spin-once)
-  (send *irtviewer* :draw-objects)
-  (x::window-main-one)
+  (if use-display (send *irtviewer* :draw-objects))
+  (if use-display (x::window-main-one))
   (ros::sleep)
   )
 

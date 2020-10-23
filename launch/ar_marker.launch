@@ -22,6 +22,8 @@
     <node pkg="carry_objects" name="camera_info_pub" type="infopub.py">
         <param name="info_yaml" type="string" value="$(find carry_objects)/multisense_left_camera.yaml" />
     </node>
-    <node pkg="carry_objects" name="ar_marker_coord_pub" type="display-armarker.l" />
+    <node pkg="carry_objects" name="ar_display_pub" type="display-armarker.l">
+        <param name="use_display" value="false" />
+    </node>
 
 </launch>
