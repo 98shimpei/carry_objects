@@ -52,7 +52,7 @@
   (send *ri* :wait-interpolation)
   (send *ri* :stop-impedance :arms)
   (send *ri* :start-impedance :arms :K-r 100.0 :D-r 100.0 :M-r 1
-                                    :K-p 70.0 :D-p 70.0 :M-p 5)
+                                    :K-p 700.0 :D-p 700.0 :M-p 5)
 
   (send *robot* :rarm :inverse-kinematics (make-coords :pos #f(480 -400 1000) :rpy (list 0 0 (deg2rad -90)))) 
   (send *robot* :larm :inverse-kinematics (make-coords :pos #f(480 400 1000) :rpy (list 0 0 (deg2rad 90)))) 

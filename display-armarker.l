@@ -33,6 +33,8 @@
   (send box-poses-msg :existence nil)
   (setq box-poses-list nil)
   (send *jaxon_red* :angle-vector (send *ri* :state :potentio-vector))
+  (setq dummy-robot *jaxon_red*)
+  (send dummy-robot :angle-vector (send *ri* :reference-vector))
   (mapcar #'(lambda (obj-pose)
     (let* (;; (1) カメラ相対の座標系は、geometry_msgs/Poseという型で得られるので、Euslispのcoordsに変換する
       (cam->obj-coords (ros::tf-pose->coords (send (send obj-pose :pose) :pose)))
@@ -52,10 +54,12 @@
       (send box-pose :id (send obj-pose :id))
       (send box-poses-msg :existence t)
       (setq box-poses-list (cons box-pose box-poses-list))
+      (if (= (send obj-pose :id) 7) (send dummy-robot :head :look-at (send *target-object* :pos)))
       ))
     (send msg :markers))
   (send box-poses-msg :poses box-poses-list)
   (ros::publish "box_pose" box-poses-msg)
+  (send *ri* :angle-vector (send dummy-robot :angle-vector))
   )
 
 (ros::advertise "box_pose" hrpsys_ros_bridge::BoxPoses 1)

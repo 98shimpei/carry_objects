@@ -15,7 +15,6 @@ marker_size = rospy.get_param("/ar_track_alvar/marker_size", 5.0) * 0.01 #cm -> 
 marker_id = rospy.get_param("/ar_track_alvar/output_frame", "/camera")
 
 def callback(msg):
-    print("hoge")
     markers_data = MarkerArray()
 
     for m in msg.markers:
