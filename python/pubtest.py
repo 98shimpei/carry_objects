@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 import rospy
 import geometry_msgs.msg
 from ar_track_alvar_msgs.msg import AlvarMarkers
