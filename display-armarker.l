@@ -59,7 +59,7 @@
     (send msg :markers))
   (send box-poses-msg :poses box-poses-list)
   (ros::publish "box_pose" box-poses-msg)
-  (send *ri* :angle-vector (send dummy-robot :angle-vector))
+  ;; (send *ri* :angle-vector (send dummy-robot :angle-vector))
   )
 
 (ros::advertise "box_pose" hrpsys_ros_bridge::BoxPoses 1)
