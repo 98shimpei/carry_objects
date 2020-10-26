@@ -1,7 +1,7 @@
 #!/usr/bin/env roseus
 
-(load "jaxonred.l")
-(load "utils.l")
+(load "package://carry_objects/euslisp/jaxonred.l")
+(load "package://carry_objects/euslisp/utils.l")
 (setq *robot* *jaxon_red*)
 (send *robot* :angle-vector (send *ri* :state :potentio-vector))
 (send *ri* :angle-vector (send *ri* :state :potentio-vector))

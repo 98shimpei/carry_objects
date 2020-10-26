@@ -1,7 +1,7 @@
 #!/usr/bin/env roseus
 
-(load "jaxonred.l")
-(load "utils.l")
+(load "package://carry_objects/euslisp/jaxonred.l")
+(load "package://carry_objects/euslisp/utils.l")
 
 (defun start (&optional (simulation nil))
   (setq *robot* *jaxon_red*)

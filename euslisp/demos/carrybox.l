@@ -1,7 +1,7 @@
 #!/usr/bin/env roseus
 
-(load "../jaxonred.l")
-(load "../utils.l")
+(load "package://carry_objects/euslisp/jaxonred.l")
+(load "package://carry_objects/euslisp/utils.l")
 
 (defun start (&optional (simulation nil))
   (if simulation (setq *simulation_mode* t) (setq *simulation_mode* nil))
