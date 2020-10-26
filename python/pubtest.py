@@ -5,6 +5,8 @@ from hrpsys_ros_bridge.msg import BoxPose
 rospy.init_node('test_pub')
 
 pub = rospy.Publisher("test", AlvarMarkers, queue_size=1)
-while(True):
+r = rospy.Rate(10)
+while not rospy.is_shutdown():
+    print("pub")
     pub.publish(AlvarMarkers())
-    rospy.sleep(0.1)
+    r.sleep()
