@@ -24,6 +24,6 @@
         <param name="info_yaml" type="string" value="$(find carry_objects)/config/multisense_left_camera.yaml" />
     </node>
 
-    <node pkg="carry_objects" name="box_pose_pub" type="boxposepub.py" />
+    <!-- <node pkg="carry_objects" name="box_pose_pub" type="boxposepub.py" /> -->
 
 </launch>
