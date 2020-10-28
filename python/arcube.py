@@ -9,7 +9,6 @@ import quaternion
 rospy.init_node("marker_pub")
 
 pub = rospy.Publisher("markers", MarkerArray, queue_size = 1)
-rate = rospy.Rate(25)
 
 marker_size = rospy.get_param("/ar_track_alvar/marker_size", 5.0) * 0.01 #cm -> m
 marker_id = rospy.get_param("/ar_track_alvar/output_frame", "/camera")
