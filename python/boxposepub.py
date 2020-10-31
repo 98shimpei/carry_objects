@@ -23,10 +23,10 @@ def callback(msg):
     for m in msg.markers:
         now = m.header.stamp
         target_marker_frame = '/ar_marker_' + str(m.id)
-        flag = 3
+        flag = 300
         while(flag > 0):
             try:
-                (trans,rot) = listener.lookupTransform('/map', target_marker_frame, now)
+                (trans,rot) = listener.lookupTransform('/odom', target_marker_frame, now)
                 flag = 0
                 box_pose = BoxPose()
                 box_pose.header = m.header
@@ -42,9 +42,11 @@ def callback(msg):
                 pubdata.poses.append(box_pose)
                 delay = rospy.Time.now() - m.header.stamp
                 rospy.loginfo("id: " + str(m.id) + " delay: " + str(delay.secs * 1000 + delay.nsecs / 1000000) + "ms")
+		print("hogeeeeeeeeeeeeeeeeeeeeeeeeeeeee")
             except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
                 flag -= 1
-                rospy.sleep(0.0001)
+		print(flag)
+                rospy.sleep(0.001)
                 continue
     pub.publish(pubdata)
     rate.sleep()
