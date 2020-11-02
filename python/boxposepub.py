@@ -21,33 +21,20 @@ def callback(msg):
     pubdata.existence = False
     pubdata.header.stamp = rospy.Time.now()
     for m in msg.markers:
-        now = m.header.stamp
-        target_marker_frame = '/ar_marker_' + str(m.id)
-        flag = 300
-        while(flag > 0):
-            try:
-                (trans,rot) = listener.lookupTransform('/odom', target_marker_frame, now)
-                flag = 0
-                box_pose = BoxPose()
-                box_pose.header = m.header
-                box_pose.px = trans[0]
-                box_pose.py = trans[1]
-                box_pose.pz = trans[2]
-                box_pose.rx = rot[0]
-                box_pose.ry = rot[1]
-                box_pose.rz = rot[2]
-                box_pose.rw = rot[3]
-                box_pose.id = m.id
-                pubdata.existence = True
-                pubdata.poses.append(box_pose)
-                delay = rospy.Time.now() - m.header.stamp
-                rospy.loginfo("id: " + str(m.id) + " delay: " + str(delay.secs * 1000 + delay.nsecs / 1000000) + "ms")
-		print("hogeeeeeeeeeeeeeeeeeeeeeeeeeeeee")
-            except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
-                flag -= 1
-		print(flag)
-                rospy.sleep(0.001)
-                continue
+        box_pose = BoxPose()
+        box_pose.header = m.header
+        box_pose.px = m.pose.pose.position.x
+        box_pose.py = m.pose.pose.position.y
+        box_pose.pz = m.pose.pose.position.z
+        box_pose.rx = m.pose.pose.orientation.x
+        box_pose.ry = m.pose.pose.orientation.y
+        box_pose.rz = m.pose.pose.orientation.z
+        box_pose.rw = m.pose.pose.orientation.w
+        box_pose.id = m.id
+        pubdata.existence = True
+        pubdata.poses.append(box_pose)
+        delay = rospy.Time.now() - m.header.stamp
+        rospy.loginfo("id: " + str(m.id) + " delay: " + str(delay.secs * 1000 + delay.nsecs / 1000000) + "ms")
     pub.publish(pubdata)
     rate.sleep()
 

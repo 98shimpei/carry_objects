@@ -18,10 +18,11 @@
 ;;; 表示モデルなど
 (load "models/chessboard-30-7x5-object.l")
 (if use-display (if (not (boundp '*irtviewer*)) (make-irtviewer)))
-(setq *target-object* (chessboard-30-7x5 :name "/test_object"))
+(setq *target-object* (make-cube 100 100 100))
 (if use-display (objects (list *target-object* *jaxon_red*)))
 
 (setq *tfb* (instance ros::transform-broadcaster :init))
+(send *jaxon_red* :fix-leg-to-coords (make-coords))
 
 (ros::roseus "objectdetection_client")
 

@@ -73,3 +73,8 @@
   (print "0")
   (send *robot* :angle-vector (send *ri* :state :potentio-vector))
   (send *ri* :angle-vector (send *robot* :angle-vector)))
+
+(defun send-pose ()
+  (send *robot* :angle-vector (send *ri* :reference-vector))
+  (send *ri* :angle-vector (send *robot* :angle-vector))
+  )
