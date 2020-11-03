@@ -41,7 +41,7 @@
   (setq *state* 'put)
   )
 
-(defun lift-box (&optional (nip_force 50) (box_width 310))
+(defun lift-box (&optional (box_weight -1) (nip_force 50) (box_width 310))
   (unless (string= *state* 'put)
     (print "robot carries box now")
     (return-from lift-box nil))
@@ -69,7 +69,7 @@
 
   (print "press key to set-ref-forces")
   (read-line)
-  (setq box_weight (send (send *ri* :get-box-weight) :operation_return))
+  (if (< box_weight 0) (setq box_weight (send (send *ri* :get-box-weight) :operation_return)))
   (print box_weight)
   (send *ri* :set-ref-forces
       (list
@@ -86,7 +86,7 @@
   (send *ri* :wait-interpolation)
   )
 
-(defun lift-box-with-handle ()
+(defun lift-box-with-handle (&optional (box_weight -1))
   (unless (string= *state* 'put)
     (print "robot carries box now")
     (return-from lift-box-with-handle nil))
@@ -105,7 +105,7 @@
   (print "press key to set-ref-forces")
   (read-line)
   (unix:sleep 10)
-  (setq box_weight (send (send *ri* :get-box-weight) :operation_return))
+  (if (< box_weight 0) (setq box_weight (send (send *ri* :get-box-weight) :operation_return)))
   (print box_weight)
   (send *ri* :set-ref-forces
       (list
