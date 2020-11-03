@@ -13,9 +13,14 @@ pub = rospy.Publisher("markers", MarkerArray, queue_size = 1)
 marker_size = rospy.get_param("/ar_track_alvar/marker_size", 5.0) * 0.01 #cm -> m
 marker_id = rospy.get_param("/ar_track_alvar/output_frame", "/camera")
 
-def callback(msg):
-    markers_data = MarkerArray()
+marker_dict = {}
 
+class MarkerData:
+    def __init__(self, d):
+        self.data = d
+        self.probability = 1.0
+
+def callback(msg):
     for m in msg.markers:
         marker_data = Marker()
         marker_data.header.frame_id = marker_id.lstrip()
@@ -23,8 +28,6 @@ def callback(msg):
 
         marker_data.ns = "basic_shapes"
         marker_data.id = m.id
-
-        marker_data.action = Marker.ADD
 
         marker_data.pose = m.pose.pose
         m_pos = np.array([marker_data.pose.position.x, marker_data.pose.position.y, marker_data.pose.position.z])
@@ -47,8 +50,18 @@ def callback(msg):
 
         marker_data.type = 1
 
-        markers_data.markers.append(marker_data)
+        marker_dict[m.id] = MarkerData(marker_data)
 
+    markers_data = MarkerArray()
+    for m in marker_dict:
+        if marker_dict[m].probability > 0.5:
+            marker_dict[m].data.action = Marker.ADD
+            markers_data.markers.append(marker_dict[m].data)
+            marker_dict[m].probability -= 0.2
+        elif marker_dict[m].probability > 0:
+            marker_dict[m].data.action = Marker.DELETE
+            markers_data.markers.append(marker_dict[m].data)
+            marker_dict[m].probability = -1
     pub.publish(markers_data)
 
 rospy.Subscriber("ar_pose_marker", AlvarMarkers, callback)

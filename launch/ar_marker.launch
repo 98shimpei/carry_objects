@@ -1,7 +1,7 @@
 <launch>
 	<arg name="marker_size" default="15.4" />
 	<arg name="max_new_marker_error" default="0.08" />
-	<arg name="max_track_error" default="0.2" />
+	<arg name="max_track_error" default="0.5" />
 
 	<arg name="cam_image_topic" default="/multisense/left/image_color" />
     <!-- ar_track_alvar が一定の形式のcamera_infoしか使えないような気がする？ -->
