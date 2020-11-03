@@ -23,6 +23,6 @@
     </node>
 
     <node pkg="carry_objects" name="marker_pub" type="arcube.py" />
-    <node pkg="carry_objects" name="boxpose_pub" type="boxposepub.py" />
+    <node pkg="carry_objects" name="boxpose_pub" type="boxposepub.py" output="screen" />
 
 </launch>
