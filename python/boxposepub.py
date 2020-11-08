@@ -37,7 +37,6 @@ def callback(msg):
             box_pose.px = m_new_pos[0]
             box_pose.py = m_new_pos[1]
             box_pose.pz = m_new_pos[2]
-            rospy.loginfo("id: " + str(m.id) + " m_pos: " + str(np.dot(box_info[m.id]['marker']['rot'], box_info[m.id]['marker']['pos'])) + " m_new_pos: " + str(m_new_pos))
             box_pose.rx = m.pose.pose.orientation.x
             box_pose.ry = m.pose.pose.orientation.y
             box_pose.rz = m.pose.pose.orientation.z
@@ -47,7 +46,7 @@ def callback(msg):
             pubdata.header.stamp = m.header.stamp
             pubdata.poses.append(box_pose)
             delay = rospy.Time.now() - m.header.stamp
-            #rospy.loginfo("id: " + str(m.id) + " delay: " + str(delay.secs * 1000 + delay.nsecs / 1000000) + "ms")
+            rospy.loginfo("id: " + str(m.id) + " delay: " + str(delay.secs * 1000 + delay.nsecs / 1000000) + "ms")
     pub.publish(pubdata)
     rate.sleep()
 
