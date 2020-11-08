@@ -32,6 +32,7 @@ def callback(msg):
         box_pose.rw = m.pose.pose.orientation.w
         box_pose.id = m.id
         pubdata.existence = True
+        pubdata.header.stamp = m.header.stamp
         pubdata.poses.append(box_pose)
         delay = rospy.Time.now() - m.header.stamp
         rospy.loginfo("id: " + str(m.id) + " delay: " + str(delay.secs * 1000 + delay.nsecs / 1000000) + "ms")
