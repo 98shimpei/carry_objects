@@ -230,7 +230,8 @@
 
   )
 
-(defun put-box ()
+(defun put-box (&optional (wait-time 10))
+  (unix:sleep wait-time)
   (when (string= *state* 'put)
     (print "robot does not carry box now")
     (return-from put-box nil))
