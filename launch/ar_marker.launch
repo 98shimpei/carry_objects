@@ -22,7 +22,7 @@
         <param name="info_yaml" type="string" value="$(find carry_objects)/config/multisense_left_camera.yaml" />
     </node>
 
-    <node pkg="carry_objects" name="marker_pub" type="arcube.py" />
+    <!-- <node pkg="carry_objects" name="marker_pub" type="arcube.py" /> -->
     <node pkg="carry_objects" name="boxpose_pub" type="boxposepub.py" output="screen" >
         <param name="info_yaml" type="string" value="$(find carry_objects)/config/box_info.yaml" />
     </node>
