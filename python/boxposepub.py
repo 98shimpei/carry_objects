@@ -79,7 +79,7 @@ def callback(msg):
 
             b_pos = np.array([m.pose.pose.position.x, m.pose.pose.position.y, m.pose.pose.position.z])
             b_rot = np.dot(quaternion.as_rotation_matrix(np.quaternion(m.pose.pose.orientation.w, m.pose.pose.orientation.x, m.pose.pose.orientation.y, m.pose.pose.orientation.z)), np.linalg.inv(box_info[marker_to_box_dict[m.id]]['markers'][m.id]['rot']))
-            b_pos = m_pos + np.dot(b_rot, -np.array(box_info[m.id]['markers'][m.id]['pos']))
+            b_pos = m_pos + np.dot(b_rot, -np.array(box_info[marker_to_box_dict[m.id]]['markers'][m.id]['pos']))
 
             if not marker_to_box_dict[m.id] in box_dict:
                 box_dict[marker_to_box_dict[m.id]] = BoxData()
@@ -91,7 +91,7 @@ def callback(msg):
 
 
     for b in box_dict:
-        if box_dict[b].probability > 0:
+        if len(box_dict[b].markers_data) != 0:
             pos = np.array([0, 0, 0])
             rot = np.array([[0, 0, 0], [0, 0, 0], [0, 0, 0]])
             probability_sum = 0
@@ -137,27 +137,33 @@ def callback(msg):
     box_poses_data.existence = False
     box_poses_data.header.stamp = rospy.Time.now()
     markers_data = MarkerArray()
+    box_del_list = []
     for b in box_dict:
+        marker_del_list = []
         for m in box_dict[b].markers_data:
-            if box_dict[b].markers_data[m].probability > 0.5:
+            if box_dict[b].markers_data[m].probability > 0:
                 box_dict[b].markers_data[m].marker_data.action = Marker.ADD
                 markers_data.markers.append(box_dict[b].markers_data[m].marker_data)
-                box_dict[b].markers_data[m].probability -= 0.2
-            elif box_dict[b].markers_data[m].probability > 0:
+                box_dict[b].markers_data[m].probability -= 0.7
+            else:
                 box_dict[b].markers_data[m].marker_data.action = Marker.DELETE
                 markers_data.markers.append(box_dict[b].markers_data[m].marker_data)
-                box_dict[b].markers_data[m].probability = -1.0 
-        if box_dict[b].probability > 0.5:
+                marker_del_list.append(m)
+        for m in marker_del_list:
+            box_dict[b].markers_data.pop(m)
+        if box_dict[b].probability > 0:
             box_dict[b].box_marker_data.action = Marker.ADD
             box_poses_data.existence = True
             box_poses_data.header.stamp = box_dict[b].box_pose_data.header.stamp
             box_poses_data.poses.append(box_dict[b].box_pose_data)
             markers_data.markers.append(box_dict[b].box_marker_data)
-            box_dict[b].probability -= 0.2
-        elif box_dict[b].probability > 0:
+            box_dict[b].probability -= 0.7
+        else:
             box_dict[b].box_marker_data.action = Marker.DELETE
             markers_data.markers.append(box_dict[b].box_marker_data)
-            box_dict[b].probability = -1
+            box_del_list.append(b)
+    for b in box_del_list:
+        box_dict.pop(b)
     markers_pub.publish(markers_data)
     box_pose_pub.publish(box_poses_data)
     rate.sleep()
