@@ -31,7 +31,7 @@
     (read-line)
     ))
   (send *ri* :start-auto-balancer :limbs '(:rarm :larm :rleg :lleg))
-  (if simulation (start-footguided-modification) (start-footguided-modification-zikki))
+  (if simulation (start-footguided-modification nil) (start-footguided-modification t))
   (if (not simulation) (let ()
     (print "press key to start-st")
     (read-line)
@@ -61,7 +61,7 @@
 
   (print "press key to nip box")
   (read-line)
-  (unix:sleep 10)
+  (unix:sleep 5)
   (send *robot* :rarm :inverse-kinematics (make-coords :pos (float-vector 480 (/ (+ box_width 50) -2.0) 1000) :rpy (list 0 0 (deg2rad -90))))
   (send *robot* :larm :inverse-kinematics (make-coords :pos (float-vector 480 (/ (+ box_width 50)  2.0) 1000) :rpy (list 0 0 (deg2rad 90))))
   (send *ri* :angle-vector (send *robot* :angle-vector) 3000)
