@@ -13,6 +13,7 @@ from hrpsys_ros_bridge.msg import BoxPose
 from ar_track_alvar_msgs.msg import AlvarMarkers
 from visualization_msgs.msg import MarkerArray
 from visualization_msgs.msg import Marker
+from geometry_msgs.msg import PointStamped
 
 box_info_fname = rospy.get_param("/boxpose_pub/info_yaml", "../config/box_info.yaml")
 marker_size = rospy.get_param("/ar_track_alvar/marker_size", 5.0) * 0.01 #cm -> m
@@ -28,6 +29,7 @@ for b in box_info:
 rospy.init_node('boxpose_pub')
 box_pose_pub = rospy.Publisher("box_pose", BoxPoses, queue_size = 1)
 markers_pub = rospy.Publisher("markers", MarkerArray, queue_size = 1)
+look_at_point_pub = rospy.Publisher("look_at_point", PointStamped, queue_size = 1)
 listener = tf.TransformListener()
 
 
@@ -166,6 +168,15 @@ def callback(msg):
         box_dict.pop(b)
     markers_pub.publish(markers_data)
     box_pose_pub.publish(box_poses_data)
+
+    if 7 in box_dict and 8 in box_dict:
+        point_data = PointStamped()
+        point_data.header = rospy.Time.now()
+        point_data.point.x = (box_dict[7].box_pose_data.px + box_dict[8].box_pose_data.px) / 2.0
+        point_data.point.y = (box_dict[7].box_pose_data.py + box_dict[8].box_pose_data.py) / 2.0
+        point_data.point.z = (box_dict[7].box_pose_data.pz + box_dict[8].box_pose_data.pz) / 2.0
+        look_at_point_pub.publish(point_data)
+
     rate.sleep()
 
 rospy.Subscriber("ar_pose_marker", AlvarMarkers, callback)

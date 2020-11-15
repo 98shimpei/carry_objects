@@ -1,0 +1,75 @@
+format: ChoreonoidBody
+formatVersion: 1.0
+
+name: cardboard
+rootLink: body
+links:
+  -
+    name: body
+    jointType: free
+    mass: 2.0
+    inertia: [
+      0.04, 0,       0,
+      0,       0.05, 0,
+      0,       0,       0.05 ]
+    elements:
+      -
+        type: Shape
+        geometry: { type: Box, size: [ 0.310, 0.310, 0.227 ] }
+        appearance:
+          material:
+            diffuseColor: [ 1.0, 1.0, 1.0 ]
+      -
+        type: Transform
+        translation: [ 0.040, 0, 0.1135 ]
+        elements:
+          Shape:
+            geometry: { type: Box, size: [ 0.0225, 0.1025, 0.001 ] }
+            appearance:
+              material:
+                diffuseColor: [ 0.0, 0.0, 0.0 ]
+      -
+        type: Transform
+        translation: [ -0.040, 0, 0.1135 ]
+        elements:
+          Shape:
+            geometry: { type: Box, size: [ 0.0225, 0.1025, 0.001 ] }
+            appearance:
+              material:
+                diffuseColor: [ 0.0, 0.0, 0.0 ]
+      -
+        type: Transform
+        translation: [ 0, 0.040, 0.1135 ]
+        elements:
+          Shape:
+            geometry: { type: Box, size: [ 0.1025, 0.0225, 0.001 ] }
+            appearance:
+              material:
+                diffuseColor: [ 0.0, 0.0, 0.0 ]
+      -
+        type: Transform
+        translation: [ 0, -0.040, 0.1135 ]
+        elements:
+          Shape:
+            geometry: { type: Box, size: [ 0.1025, 0.0225, 0.001 ] }
+            appearance:
+              material:
+                diffuseColor: [ 0.0, 0.0, 0.0 ]
+      -
+        type: Transform
+        translation: [ -0.00575, 0.023, 0.1135 ]
+        elements:
+          Shape:
+            geometry: { type: Box, size: [ 0.023, 0.0115, 0.001 ] }
+            appearance:
+              material:
+                diffuseColor: [ 0.0, 0.0, 0.0 ]
+      -
+        type: Transform
+        translation: [ 0.0115, 0.0115, 0.1135 ]
+        elements:
+          Shape:
+            geometry: { type: Box, size: [ 0.0345, 0.0115, 0.001 ] }
+            appearance:
+              material:
+                diffuseColor: [ 0.0, 0.0, 0.0 ]
