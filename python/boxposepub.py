@@ -171,10 +171,17 @@ def callback(msg):
 
     if 7 in box_dict and 8 in box_dict:
         point_data = PointStamped()
-        point_data.header = rospy.Time.now()
+        point_data.header.stamp = rospy.Time.now()
         point_data.point.x = (box_dict[7].box_pose_data.px + box_dict[8].box_pose_data.px) / 2.0
         point_data.point.y = (box_dict[7].box_pose_data.py + box_dict[8].box_pose_data.py) / 2.0
         point_data.point.z = (box_dict[7].box_pose_data.pz + box_dict[8].box_pose_data.pz) / 2.0
+        look_at_point_pub.publish(point_data)
+    else:
+        point_data = PointStamped()
+        point_data.header.stamp = rospy.Time.now()
+        point_data.point.x = 0.0
+        point_data.point.y = 0.0
+        point_data.point.z = 0.0
         look_at_point_pub.publish(point_data)
 
     rate.sleep()
