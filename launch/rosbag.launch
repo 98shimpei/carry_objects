@@ -1,0 +1,16 @@
+<launch>
+  <arg name="bagfile"
+       default="/home/shimpei/rosbag/test.bag"/>
+  <node name="rosbag_record"
+	pkg="rosbag" type="record"
+	args="-o $(arg bagfile)
+	      -b 0
+	      /box_pose
+	      /look_at_point
+	      /multisense_local/left/camera_info
+	      /multisense_local/left/image_rect_color
+	      /tf
+	      /tf_static"
+	output="screen">
+  </node>
+</launch>

@@ -38,6 +38,7 @@
     ))
   (send *ri* :start-st)
   (if simulation (send *ri* :remove-force-sensor-offset-rmfo-arms))
+  (send *ri* :remove-force-sensor-offset-rmfo-arms)
   (setq *state* 'put)
   )
 
