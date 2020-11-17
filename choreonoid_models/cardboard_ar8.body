@@ -1,0 +1,102 @@
+format: ChoreonoidBody
+formatVersion: 1.0
+
+name: cardboard_8
+rootLink: body
+links:
+  -
+    name: body
+    jointType: free
+    mass: 2.0
+    inertia: [
+      0.04, 0,       0,
+      0,       0.05, 0,
+      0,       0,       0.05 ]
+    elements:
+      -
+        type: Shape
+        geometry: { type: Box, size: [ 0.310, 0.310, 0.227 ] }
+        appearance:
+          material:
+            diffuseColor: [ 1.0, 1.0, 1.0 ]
+      -
+        type: Transform
+        translation: [ -0.156, 0.040, 0.0 ]
+        elements:
+          Shape:
+            geometry: { type: Box, size: [ 0.001, 0.0225, 0.1025 ] }
+            appearance:
+              material:
+                diffuseColor: [ 0.0, 0.0, 0.0 ]
+      -
+        type: Transform
+        translation: [ -0.156, -0.040, 0.0 ]
+        elements:
+          Shape:
+            geometry: { type: Box, size: [ 0.001, 0.0225, 0.1025 ] }
+            appearance:
+              material:
+                diffuseColor: [ 0.0, 0.0, 0.0 ]
+      -
+        type: Transform
+        translation: [ -0.156, 0.0, 0.040 ]
+        elements:
+          Shape:
+            geometry: { type: Box, size: [ 0.001, 0.1025, 0.0225 ] }
+            appearance:
+              material:
+                diffuseColor: [ 0.0, 0.0, 0.0 ]
+      -
+        type: Transform
+        translation: [ -0.156, 0.0, -0.040 ]
+        elements:
+          Shape:
+            geometry: { type: Box, size: [ 0.001, 0.1025, 0.0225 ] }
+            appearance:
+              material:
+                diffuseColor: [ 0.0, 0.0, 0.0 ]
+      -
+        type: Transform
+        translation: [ -0.156, 0.01725, 0.0 ]
+        elements:
+          Shape:
+            geometry: { type: Box, size: [ 0.001, 0.023, 0.0115 ] }
+            appearance:
+              material:
+                diffuseColor: [ 0.0, 0.0, 0.0 ]
+      -
+        type: Transform
+        translation: [ -0.156, -0.00575, 0.0115 ]
+        elements:
+          Shape:
+            geometry: { type: Box, size: [ 0.001, 0.023, 0.0115 ] }
+            appearance:
+              material:
+                diffuseColor: [ 0.0, 0.0, 0.0 ]
+      -
+        type: Transform
+        translation: [ -0.156, -0.00575, -0.0115 ]
+        elements:
+          Shape:
+            geometry: { type: Box, size: [ 0.001, 0.023, 0.0115 ] }
+            appearance:
+              material:
+                diffuseColor: [ 0.0, 0.0, 0.0 ]
+      -
+        type: Transform
+        translation: [ -0.156, -0.0115, 0.023 ]
+        elements:
+          Shape:
+            geometry: { type: Box, size: [ 0.001, 0.0115, 0.0115 ] }
+            appearance:
+              material:
+                diffuseColor: [ 0.0, 0.0, 0.0 ]
+      -
+        type: Transform
+        translation: [ -0.156, -0.023, -0.023 ]
+        elements:
+          Shape:
+            geometry: { type: Box, size: [ 0.001, 0.0115, 0.0115 ] }
+            appearance:
+              material:
+                diffuseColor: [ 0.0, 0.0, 0.0 ]

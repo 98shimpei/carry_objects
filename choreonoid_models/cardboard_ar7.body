@@ -1,7 +1,7 @@
 format: ChoreonoidBody
 formatVersion: 1.0
 
-name: cardboard
+name: cardboard_7
 rootLink: body
 links:
   -
@@ -156,10 +156,73 @@ links:
                 diffuseColor: [ 0.0, 0.0, 0.0 ]
       -
         type: Transform
-        translation: [ -0.156, 0.023, 0.0 ]
+        translation: [ -0.156, 0.023, -0.0115 ]
         elements:
           Shape:
-            geometry: { type: Box, size: [ 0.001, 0.1025, 0.0225 ] }
+            geometry: { type: Box, size: [ 0.001, 0.0115, 0.0345 ] }
+            appearance:
+              material:
+                diffuseColor: [ 0.0, 0.0, 0.0 ]
+      -
+        type: Transform
+        translation: [ -0.156, 0.023, 0.023 ]
+        elements:
+          Shape:
+            geometry: { type: Box, size: [ 0.001, 0.0115, 0.0115 ] }
+            appearance:
+              material:
+                diffuseColor: [ 0.0, 0.0, 0.0 ]
+      -
+        type: Transform
+        translation: [ -0.156, 0.0115, 0.00575 ]
+        elements:
+          Shape:
+            geometry: { type: Box, size: [ 0.001, 0.0115, 0.023 ] }
+            appearance:
+              material:
+                diffuseColor: [ 0.0, 0.0, 0.0 ]
+      -
+        type: Transform
+        translation: [ -0.156, 0.0, 0.0115 ]
+        elements:
+          Shape:
+            geometry: { type: Box, size: [ 0.001, 0.0115, 0.0115 ] }
+            appearance:
+              material:
+                diffuseColor: [ 0.0, 0.0, 0.0 ]
+      -
+        type: Transform
+        translation: [ -0.156, 0.0, -0.0115 ]
+        elements:
+          Shape:
+            geometry: { type: Box, size: [ 0.001, 0.0115, 0.0115 ] }
+            appearance:
+              material:
+                diffuseColor: [ 0.0, 0.0, 0.0 ]
+      -
+        type: Transform
+        translation: [ -0.156, -0.0115, 0.023 ]
+        elements:
+          Shape:
+            geometry: { type: Box, size: [ 0.001, 0.0115, 0.0115 ] }
+            appearance:
+              material:
+                diffuseColor: [ 0.0, 0.0, 0.0 ]
+      -
+        type: Transform
+        translation: [ -0.156, -0.023, 0.0115 ]
+        elements:
+          Shape:
+            geometry: { type: Box, size: [ 0.001, 0.0115, 0.0115 ] }
+            appearance:
+              material:
+                diffuseColor: [ 0.0, 0.0, 0.0 ]
+      -
+        type: Transform
+        translation: [ -0.156, -0.023, -0.01725 ]
+        elements:
+          Shape:
+            geometry: { type: Box, size: [ 0.001, 0.0115, 0.023 ] }
             appearance:
               material:
                 diffuseColor: [ 0.0, 0.0, 0.0 ]

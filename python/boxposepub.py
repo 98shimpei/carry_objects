@@ -160,6 +160,16 @@ def callback(msg):
             box_poses_data.existence = True
             box_poses_data.header.stamp = box_dict[b].box_pose_data.header.stamp
             box_poses_data.poses.append(box_dict[b].box_pose_data)
+            br = tf.TransformBroadcaster()
+            br.sendTransform(
+                (box_dict[b].box_marker_data.pose.position.x,
+                 box_dict[b].box_marker_data.pose.position.y,
+                 box_dict[b].box_marker_data.pose.position.z),
+                (box_dict[b].box_marker_data.pose.orientation.x,
+                 box_dict[b].box_marker_data.pose.orientation.y,
+                 box_dict[b].box_marker_data.pose.orientation.z,
+                 box_dict[b].box_marker_data.pose.orientation.w),
+                rospy.Time.now(), "box"+str(b), "HEAD_LEFT_CAMERA")
             markers_data.markers.append(box_dict[b].box_marker_data)
             box_dict[b].probability -= 0.7
         else:
