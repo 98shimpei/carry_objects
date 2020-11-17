@@ -18,6 +18,8 @@ from geometry_msgs.msg import PointStamped
 box_info_fname = rospy.get_param("/boxpose_pub/info_yaml", "../config/box_info.yaml")
 marker_size = rospy.get_param("/ar_track_alvar/marker_size", 5.0) * 0.01 #cm -> m
 marker_frame_id = rospy.get_param("/ar_track_alvar/output_frame", "/camera")
+top_box_id = rospy.get_param("/boxpose_pub/top_box_id", 7)
+base_box_id = rospy.get_param("/boxpose_pub/top_box_id", 8)
 
 with open(box_info_fname) as yml:
     box_info = yaml.load(yml)
@@ -171,18 +173,24 @@ def callback(msg):
 
     point_data = PointStamped()
     point_data.header.stamp = rospy.Time.now()
-    if 7 in box_dict and 8 in box_dict:
-        point_data.point.x = (box_dict[7].box_pose_data.px + box_dict[8].box_pose_data.px) / 2.0
-        point_data.point.y = (box_dict[7].box_pose_data.py + box_dict[8].box_pose_data.py) / 2.0
-        point_data.point.z = (box_dict[7].box_pose_data.pz + box_dict[8].box_pose_data.pz) / 2.0
-    elif 7 in box_dict:
-        point_data.point.x = box_dict[7].box_pose_data.px
-        point_data.point.y = box_dict[7].box_pose_data.py
-        point_data.point.z = box_dict[7].box_pose_data.pz
-    elif 8 in box_dict:
-        point_data.point.x = box_dict[8].box_pose_data.px
-        point_data.point.y = box_dict[8].box_pose_data.py
-        point_data.point.z = box_dict[8].box_pose_data.pz
+    if top_box_id in box_dict and base_box_id in box_dict:
+        point_data.point.x = (box_dict[top_box_id].box_pose_data.px + box_dict[base_box_id].box_pose_data.px) / 2.0
+        point_data.point.y = (box_dict[top_box_id].box_pose_data.py + box_dict[base_box_id].box_pose_data.py) / 2.0
+        point_data.point.z = (box_dict[top_box_id].box_pose_data.pz + box_dict[base_box_id].box_pose_data.pz) / 2.0
+    elif top_box_id in box_dict:
+        pos = np.array([box_dict[top_box_id].box_pose_data.px, box_dict[top_box_id].box_pose_data.py, box_dict[top_box_id].box_pose_data.pz])
+        rot = np.dot(quaternion.as_rotation_matrix(np.quaternion(box_dict[top_box_id].box_pose_data.rw, box_dict[top_box_id].box_pose_data.rx, box_dict[top_box_id].box_pose_data.ry, box_dict[top_box_id].box_pose_data.rz)), np.linalg.inv(box_info[marker_to_box_dict[m.id]]['markers'][m.id]['rot']))
+        pos = pos + np.dot(rot, np.array(0, 0, -box_info[top_box_id]['size'][2]/2.0))
+        point_data.point.x = pos[0]
+        point_data.point.y = pos[1]
+        point_data.point.z = pos[2]
+    elif base_box_id in box_dict:
+        pos = np.array([box_dict[base_box_id].box_pose_data.px, box_dict[base_box_id].box_pose_data.py, box_dict[base_box_id].box_pose_data.pz])
+        rot = np.dot(quaternion.as_rotation_matrix(np.quaternion(box_dict[base_box_id].box_pose_data.rw, box_dict[base_box_id].box_pose_data.rx, box_dict[base_box_id].box_pose_data.ry, box_dict[base_box_id].box_pose_data.rz)), np.linalg.inv(box_info[marker_to_box_dict[m.id]]['markers'][m.id]['rot']))
+        pos = pos + np.dot(rot, np.array(0, 0, -box_info[base_box_id]['size'][2]/2.0))
+        point_data.point.x = pos[0]
+        point_data.point.y = pos[1]
+        point_data.point.z = pos[2]
     else:
         point_data.point.x = 0.0
         point_data.point.y = 0.0
