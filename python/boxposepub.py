@@ -187,7 +187,7 @@ def callback(msg):
     elif base_box_id in box_dict:
         pos = np.array([box_dict[base_box_id].box_pose_data.px, box_dict[base_box_id].box_pose_data.py, box_dict[base_box_id].box_pose_data.pz])
         rot = np.dot(quaternion.as_rotation_matrix(np.quaternion(box_dict[base_box_id].box_pose_data.rw, box_dict[base_box_id].box_pose_data.rx, box_dict[base_box_id].box_pose_data.ry, box_dict[base_box_id].box_pose_data.rz)), np.linalg.inv(box_info[marker_to_box_dict[m.id]]['markers'][m.id]['rot']))
-        pos = pos + np.dot(rot, np.array(0, 0, -box_info[base_box_id]['size'][2]/2.0))
+        pos = pos + np.dot(rot, np.array(0, 0, box_info[base_box_id]['size'][2]/2.0))
         point_data.point.x = pos[0]
         point_data.point.y = pos[1]
         point_data.point.z = pos[2]
