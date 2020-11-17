@@ -6,8 +6,8 @@
 (defun start (&optional (simulation nil))
   (if simulation (setq *simulation_mode* t) (setq *simulation_mode* nil))
   (setq *robot* *jaxon_red*)
-  (send *robot* :angle-vector (send *ri* :state :potentio-vector))
-  (send *ri* :angle-vector (send *robot* :reset-pose))
+  ;; (send *robot* :angle-vector (send *ri* :state :potentio-vector))
+  ;; (send *ri* :angle-vector (send *robot* :reset-pose))
   (send *ri* :stop-st)
   (send *ri* :stop-auto-balancer)
   (send *ri* :set-auto-balancer-param
@@ -37,7 +37,6 @@
     (read-line)
     ))
   (send *ri* :start-st)
-  (if simulation (send *ri* :remove-force-sensor-offset-rmfo-arms))
   (send *ri* :remove-force-sensor-offset-rmfo-arms)
   (setq *state* 'put)
   )
