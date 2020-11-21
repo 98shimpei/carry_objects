@@ -2,6 +2,7 @@
 
 (load "package://carry_objects/euslisp/jaxonred.l")
 (load "package://carry_objects/euslisp/utils.l")
+(ros::load-ros-manifest "roseus")
 (ros::roseus-add-msgs "geometry_msgs")
 
 (defun start (&optional (simulation nil))
@@ -233,20 +234,35 @@
 
 (ros::roseus "carrybox")
 (setq *tfl* (instance ros::transform-listener :init))
+(ros::advertise "look_box_mode" std_msgs::string 1)
 
 (defun lift-box-on-table (&optional (box_weight -1) (nip_force 50))
   (unless (string= *state* 'put)
     (print "robot carries box now")
-    (return-from lift-box nil))
+    (return-from lift-box-on-table nil))
   (setq *state* 'lift-box)
+  (setq msg (instance std_msgs::string :init))
+  (send msg :data (format nil "lift-box"))
+  (ros::publish "look_box_mode" msg)
+  (print "change look_box_mode: lift-box")
+  (unix:sleep 5)
+
   (unless (send *tfl* :wait-for-transform "BODY" "rhand_pose" (ros::time 0) 3) (return nil))
   (unless (send *tfl* :wait-for-transform "BODY" "lhand_pose" (ros::time 0) 3) (return nil))
   (setq body->rhand-coords (send *tfl* :lookup-transform "BODY" "rhand_pose" (ros::time 0)))
   (setq body->lhand-coords (send *tfl* :lookup-transform "BODY" "lhand_pose" (ros::time 0)))
+  (print body->rhand-coords)
+  (print body->lhand-coords)
   (setq *rhand_pose* (send (send *robot* :links :body :copy-worldcoords) :transform body->rhand-coords))
   (setq *lhand_pose* (send (send *robot* :links :body :copy-worldcoords) :transform body->lhand-coords))
-  (send *robot* :rarm :inverse-kinematics (send (send *rhand_pose* :copy-worldcoords) :transform (make-coords :pos #f(-300 0 -100))))
-  (send *robot* :larm :inverse-kinematics (send (send *lhand_pose* :copy-worldcoords) :transform (make-coords :pos #f(-300 0 -100))))
+
+  (setq msg (instance std_msgs::string :init))
+  (send msg :data (format nil "box-balancer"))
+  (ros::publish "look_box_mode" msg)
+  (print "change look_box_mode: box-balancer")
+  
+  (send *robot* :rarm :inverse-kinematics (send (send *rhand_pose* :copy-worldcoords) :transform (make-coords :pos #f(-150 0 -100))))
+  (send *robot* :larm :inverse-kinematics (send (send *lhand_pose* :copy-worldcoords) :transform (make-coords :pos #f(-150 0 -100))))
   (send *ri* :angle-vector (send *robot* :angle-vector) 3000)
   (send *ri* :wait-interpolation)
   (send *robot* :rarm :inverse-kinematics (send (send *rhand_pose* :copy-worldcoords) :transform (make-coords :pos #f(0 0 -100))))
@@ -255,7 +271,7 @@
   (send *ri* :wait-interpolation)
   (send *ri* :stop-impedance :arms)
   (send *ri* :start-impedance :arms :K-r 100.0 :D-r 100.0 :M-r 1
-                                    :K-p 700.0 :D-p 700.0 :M-p 5)
+                                    :K-p 200.0 :D-p 200.0 :M-p 5)
 
   (print "press key to nip box")
   (read-line)

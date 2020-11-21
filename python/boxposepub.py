@@ -55,7 +55,7 @@ class BoxData:
         self.markers_data = {}
         self.probability = 1.0
 
-rate = rospy.Rate(20.0)
+rate = rospy.Rate(30.0)
 def callback(msg):
     for m in msg.markers:
         if m.id in marker_to_box_dict.keys():
