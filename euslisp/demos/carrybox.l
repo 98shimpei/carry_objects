@@ -3,6 +3,7 @@
 (load "package://carry_objects/euslisp/jaxonred.l")
 (load "package://carry_objects/euslisp/utils.l")
 (ros::roseus-add-msgs "geometry_msgs")
+(ros::roseus-add-msgs "std_msgs"
 
 (defun start (&optional (simulation nil))
   (if simulation (setq *simulation_mode* t) (setq *simulation_mode* nil))
@@ -233,18 +234,33 @@
 
 (ros::roseus "carrybox")
 (setq *tfl* (instance ros::transform-listener :init))
+(ros::advertise "look_box_mode" std_msgs::string 1)
 
 (defun lift-box-on-table (&optional (box_weight -1) (nip_force 50))
   (unless (string= *state* 'put)
     (print "robot carries box now")
     (return-from lift-box nil))
   (setq *state* 'lift-box)
+  (setq msg (instance std_msgs::string :init))
+  (send msg :data "lift-box")
+  (ros::publish "look_box_mode" msg)
+  (print "change look_box_mode: lift-box")
+  (unix:sleep 10)
+
   (unless (send *tfl* :wait-for-transform "BODY" "rhand_pose" (ros::time 0) 3) (return nil))
   (unless (send *tfl* :wait-for-transform "BODY" "lhand_pose" (ros::time 0) 3) (return nil))
   (setq body->rhand-coords (send *tfl* :lookup-transform "BODY" "rhand_pose" (ros::time 0)))
   (setq body->lhand-coords (send *tfl* :lookup-transform "BODY" "lhand_pose" (ros::time 0)))
+  (print body->rhand-coords)
+  (print body->lhand-coords)
   (setq *rhand_pose* (send (send *robot* :links :body :copy-worldcoords) :transform body->rhand-coords))
   (setq *lhand_pose* (send (send *robot* :links :body :copy-worldcoords) :transform body->lhand-coords))
+
+  (setq msg (instance std_msgs::string :init))
+  (send msg :data "box-balancer")
+  (ros::publish "look_box_mode" msg)
+  (print "change look_box_mode: box-balancer")
+  
   (send *robot* :rarm :inverse-kinematics (send (send *rhand_pose* :copy-worldcoords) :transform (make-coords :pos #f(-300 0 -100))))
   (send *robot* :larm :inverse-kinematics (send (send *lhand_pose* :copy-worldcoords) :transform (make-coords :pos #f(-300 0 -100))))
   (send *ri* :angle-vector (send *robot* :angle-vector) 3000)
