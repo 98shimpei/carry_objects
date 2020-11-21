@@ -2,6 +2,7 @@
 
 (load "package://carry_objects/euslisp/jaxonred.l")
 (load "package://carry_objects/euslisp/utils.l")
+(ros::roseus-add-msgs "geometry_msgs")
 
 (defun start (&optional (simulation nil))
   (if simulation (setq *simulation_mode* t) (setq *simulation_mode* nil))
@@ -11,7 +12,7 @@
   (send *ri* :stop-st)
   (send *ri* :stop-auto-balancer)
   (send *ri* :set-auto-balancer-param
-             :is-hand-fix-mode t
+             :is-hand-fix-mode nil
              :ik-mode 1)
   ;; (send *ri* :set-auto-balancer-param
   ;;     :use-force-mode :MODE-REF-FORCE-WITH-FOOT
@@ -46,24 +47,24 @@
     (print "robot carries box now")
     (return-from lift-box nil))
   (setq *state* 'lift-box)
-  (send *robot* :rarm :inverse-kinematics (make-coords :pos #f(480 -400 1100) :rpy (list 0 0 (deg2rad -90)))) 
-  (send *robot* :larm :inverse-kinematics (make-coords :pos #f(480 400 1100) :rpy (list 0 0 (deg2rad 90)))) 
+  (send *robot* :rarm :inverse-kinematics (make-coords :pos #f(530 -350 1050) :rpy (list 0 0 (deg2rad -90)))) 
+  (send *robot* :larm :inverse-kinematics (make-coords :pos #f(530 350 1050) :rpy (list 0 0 (deg2rad 90)))) 
   (send *ri* :angle-vector (send *robot* :angle-vector) 10000)
   (send *ri* :wait-interpolation)
   (send *ri* :stop-impedance :arms)
-  (send *ri* :start-impedance :arms :K-r 100.0 :D-r 100.0 :M-r 1
-                                    :K-p 700.0 :D-p 700.0 :M-p 5)
+  (send *ri* :start-impedance :arms :K-r 50.0 :D-r 50.0 :M-r 1
+                                    :K-p 70.0 :D-p 70.0 :M-p 5)
 
-  (send *robot* :rarm :inverse-kinematics (make-coords :pos #f(480 -400 1000) :rpy (list 0 0 (deg2rad -90)))) 
-  (send *robot* :larm :inverse-kinematics (make-coords :pos #f(480 400 1000) :rpy (list 0 0 (deg2rad 90)))) 
+  (send *robot* :rarm :inverse-kinematics (make-coords :pos #f(530 -350 1000) :rpy (list 0 0 (deg2rad -90)))) 
+  (send *robot* :larm :inverse-kinematics (make-coords :pos #f(530 350 1000) :rpy (list 0 0 (deg2rad 90)))) 
   (send *ri* :angle-vector (send *robot* :angle-vector) 3000)
   (send *ri* :wait-interpolation)
 
   (print "press key to nip box")
   (read-line)
   (unix:sleep 5)
-  (send *robot* :rarm :inverse-kinematics (make-coords :pos (float-vector 480 (/ (+ box_width 50) -2.0) 1000) :rpy (list 0 0 (deg2rad -90))))
-  (send *robot* :larm :inverse-kinematics (make-coords :pos (float-vector 480 (/ (+ box_width 50)  2.0) 1000) :rpy (list 0 0 (deg2rad 90))))
+  (send *robot* :rarm :inverse-kinematics (make-coords :pos (float-vector 530 (/ (+ box_width 50) -2.0) 1000) :rpy (list 0 0 (deg2rad -90))))
+  (send *robot* :larm :inverse-kinematics (make-coords :pos (float-vector 530 (/ (+ box_width 50)  2.0) 1000) :rpy (list 0 0 (deg2rad 90))))
   (send *ri* :angle-vector (send *robot* :angle-vector) 3000)
   (send *ri* :wait-interpolation)
 
@@ -80,8 +81,8 @@
        )
        3000)
   (unix::sleep 4)
-  (send *robot* :rarm :inverse-kinematics (make-coords :pos (float-vector 560 (/ (+ box_width 50) -2.0) 1250) :rpy (list 0 0 (deg2rad -90))))
-  (send *robot* :larm :inverse-kinematics (make-coords :pos (float-vector 560 (/ (+ box_width 50)  2.0) 1250) :rpy (list 0 0 (deg2rad 90))))
+  (send *robot* :rarm :inverse-kinematics (make-coords :pos (float-vector 600 (/ (+ box_width 50) -2.0) 1150) :rpy (list 0 0 (deg2rad -90))))
+  (send *robot* :larm :inverse-kinematics (make-coords :pos (float-vector 600 (/ (+ box_width 50)  2.0) 1150) :rpy (list 0 0 (deg2rad 90))))
   (send *ri* :angle-vector (send *robot* :angle-vector) 3000)
   (send *ri* :wait-interpolation)
   )
@@ -226,6 +227,59 @@
   (send *robot* :rarm :inverse-kinematics (make-coords :pos (float-vector 500 (/ box_width -2.0) 950) :rpy (list 0 (deg2rad 40) (deg2rad -90))))
   (send *robot* :larm :inverse-kinematics (make-coords :pos (float-vector 500 (/ box_width  2.0) 950) :rpy (list 0 (deg2rad 40) (deg2rad 90))))
   (send *ri* :angle-vector (send *robot* :angle-vector) 10000)
+  (send *ri* :wait-interpolation)
+
+  )
+
+(ros::roseus "carrybox")
+(setq *tfl* (instance ros::transform-listener :init))
+
+(defun lift-box-on-table (&optional (box_weight -1) (nip_force 50))
+  (unless (string= *state* 'put)
+    (print "robot carries box now")
+    (return-from lift-box nil))
+  (setq *state* 'lift-box)
+  (unless (send *tfl* :wait-for-transform "BODY" "rhand_pose" (ros::time 0) 3) (return nil))
+  (unless (send *tfl* :wait-for-transform "BODY" "lhand_pose" (ros::time 0) 3) (return nil))
+  (setq body->rhand-coords (send *tfl* :lookup-transform "BODY" "rhand_pose" (ros::time 0)))
+  (setq body->lhand-coords (send *tfl* :lookup-transform "BODY" "lhand_pose" (ros::time 0)))
+  (setq *rhand_pose* (send (send *robot* :links :body :copy-worldcoords) :transform body->rhand-coords))
+  (setq *lhand_pose* (send (send *robot* :links :body :copy-worldcoords) :transform body->lhand-coords))
+  (send *robot* :rarm :inverse-kinematics (send (send *rhand_pose* :copy-worldcoords) :transform (make-coords :pos #f(-300 0 -100))))
+  (send *robot* :larm :inverse-kinematics (send (send *lhand_pose* :copy-worldcoords) :transform (make-coords :pos #f(-300 0 -100))))
+  (send *ri* :angle-vector (send *robot* :angle-vector) 3000)
+  (send *ri* :wait-interpolation)
+  (send *robot* :rarm :inverse-kinematics (send (send *rhand_pose* :copy-worldcoords) :transform (make-coords :pos #f(0 0 -100))))
+  (send *robot* :larm :inverse-kinematics (send (send *lhand_pose* :copy-worldcoords) :transform (make-coords :pos #f(0 0 -100))))
+  (send *ri* :angle-vector (send *robot* :angle-vector) 3000)
+  (send *ri* :wait-interpolation)
+  (send *ri* :stop-impedance :arms)
+  (send *ri* :start-impedance :arms :K-r 100.0 :D-r 100.0 :M-r 1
+                                    :K-p 700.0 :D-p 700.0 :M-p 5)
+
+  (print "press key to nip box")
+  (read-line)
+  (unix:sleep 5)
+  (send *robot* :rarm :inverse-kinematics *rhand_pose*)
+  (send *robot* :larm :inverse-kinematics *lhand_pose*)
+  (send *ri* :angle-vector (send *robot* :angle-vector) 3000)
+  (send *ri* :wait-interpolation)
+
+  (print "press key to set-ref-forces")
+  (read-line)
+  (if (< box_weight 0) (setq box_weight (send (send *ri* :get-box-weight) :operation_return)))
+  (print box_weight)
+  (send *ri* :set-ref-forces
+      (list
+       (float-vector 0 0 (* (+ (send *robot* :weight) box_weight) 4.9)) 
+       (float-vector 0 0 (* (+ (send *robot* :weight) box_weight) 4.9)) 
+       (float-vector 0 (* -1 nip_force) (* -1.0 (* box_weight 4.9))) ;;rarm -260  mg/2
+       (float-vector 0 (*  1 nip_force) (* -1.0 (* box_weight 4.9))) ;;larm -285
+       )
+       3000)
+  (unix::sleep 4)
+  (send *robot* :arms :move-end-pos #f(0 0 50) :world)
+  (send *ri* :angle-vector (send *robot* :angle-vector) 3000)
   (send *ri* :wait-interpolation)
 
   )

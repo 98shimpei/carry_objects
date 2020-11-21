@@ -14,6 +14,7 @@ from ar_track_alvar_msgs.msg import AlvarMarkers
 from visualization_msgs.msg import MarkerArray
 from visualization_msgs.msg import Marker
 from geometry_msgs.msg import PointStamped
+from geometry_msgs.msg import PoseStamped
 
 box_info_fname = rospy.get_param("/boxpose_pub/info_yaml", "../config/box_info.yaml")
 marker_size = rospy.get_param("/ar_track_alvar/marker_size", 5.0) * 0.01 #cm -> m
@@ -32,6 +33,8 @@ rospy.init_node('boxpose_pub')
 box_pose_pub = rospy.Publisher("box_pose", BoxPoses, queue_size = 1)
 markers_pub = rospy.Publisher("markers", MarkerArray, queue_size = 1)
 look_at_point_pub = rospy.Publisher("look_at_point", PointStamped, queue_size = 1)
+rhand_pose_pub = rospy.Publisher("rhand_pose", PoseStamped, queue_size = 1)
+lhand_pose_pub = rospy.Publisher("lhand_pose", PoseStamped, queue_size = 1)
 listener = tf.TransformListener()
 
 
@@ -206,6 +209,43 @@ def callback(msg):
         point_data.point.y = 0.0
         point_data.point.z = 0.0
     look_at_point_pub.publish(point_data)
+
+    if base_box_id in box_dict:
+        rpose_data = PoseStamped()
+        lpose_data = PoseStamped()
+        pos = np.array([box_dict[base_box_id].box_pose_data.px, box_dict[base_box_id].box_pose_data.py, box_dict[base_box_id].box_pose_data.pz])
+        rot = quaternion.as_rotation_matrix(np.quaternion(box_dict[base_box_id].box_pose_data.rw, box_dict[base_box_id].box_pose_data.rx, box_dict[base_box_id].box_pose_data.ry, box_dict[base_box_id].box_pose_data.rz))
+        rpos = pos + np.dot(rot, np.array(box_info[base_box_id]['rhand_pose']['pos']))
+        lpos = pos + np.dot(rot, np.array(box_info[base_box_id]['lhand_pose']['pos']))
+        rrot = np.dot(rot, np.array(box_info[base_box_id]['rhand_pose']['rot']))
+        lrot = np.dot(rot, np.array(box_info[base_box_id]['lhand_pose']['rot']))
+        rquat = quaternion.from_rotation_matrix(rrot, nonorthogonal=True)
+        lquat = quaternion.from_rotation_matrix(lrot, nonorthogonal=True)
+        rpose_data.pose.position.x = rpos[0]
+        rpose_data.pose.position.y = rpos[1]
+        rpose_data.pose.position.z = rpos[2]
+        rpose_data.pose.orientation.x = rquat.x
+        rpose_data.pose.orientation.y = rquat.y
+        rpose_data.pose.orientation.z = rquat.z
+        rpose_data.pose.orientation.w = rquat.w
+        lpose_data.pose.position.x = lpos[0]
+        lpose_data.pose.position.y = lpos[1]
+        lpose_data.pose.position.z = lpos[2]
+        lpose_data.pose.orientation.x = lquat.x
+        lpose_data.pose.orientation.y = lquat.y
+        lpose_data.pose.orientation.z = lquat.z
+        lpose_data.pose.orientation.w = lquat.w
+        rhand_pose_pub.publish(rpose_data)
+        lhand_pose_pub.publish(lpose_data)
+        br = tf.TransformBroadcaster()
+        br.sendTransform(
+            (rpos[0], rpos[1], rpos[2]),
+            (rquat.x, rquat.y, rquat.z, rquat.w),
+            rospy.Time.now(), "rhand_pose", "HEAD_LEFT_CAMERA")
+        br.sendTransform(
+            (lpos[0], lpos[1], lpos[2]),
+            (lquat.x, lquat.y, lquat.z, lquat.w),
+            rospy.Time.now(), "lhand_pose", "HEAD_LEFT_CAMERA")
 
     rate.sleep()
 
