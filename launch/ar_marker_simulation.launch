@@ -22,6 +22,9 @@
     <!-- <node pkg="carry_objects" name="marker_pub" type="arcube.py" /> -->
     <node pkg="carry_objects" name="boxpose_pub" type="boxposepub.py" output="screen" >
         <param name="info_yaml" type="string" value="$(find carry_objects)/config/box_info.yaml" />
+        <param name="top_box_id" type="int" value="7" />
+        <param name="base_box_id" type="int" value="8" />
+        <param name="hold_box_id" type="int" value="8" />
     </node>
 
 </launch>

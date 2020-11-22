@@ -236,7 +236,7 @@
 (setq *tfl* (instance ros::transform-listener :init))
 (ros::advertise "look_box_mode" std_msgs::string 1)
 
-(defun lift-box-on-table (&optional (box_weight -1) (nip_force 50))
+(defun lift-box-on-table (box_weight &optional (nip_force 50))
   (unless (string= *state* 'put)
     (print "robot carries box now")
     (return-from lift-box-on-table nil))
