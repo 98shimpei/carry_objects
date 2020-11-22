@@ -21,8 +21,8 @@ box_info_fname = rospy.get_param("/boxpose_pub/info_yaml", "../config/box_info.y
 marker_size = rospy.get_param("/ar_track_alvar/marker_size", 5.0) * 0.01 #cm -> m
 marker_frame_id = rospy.get_param("/ar_track_alvar/output_frame", "/camera")
 top_box_id = rospy.get_param("/boxpose_pub/top_box_id", 7)
-base_box_id = rospy.get_param("/boxpose_pub/top_box_id", 8)
-hold_box_id = rospy.get_param("/boxpose_pub/top_box_id", 9)
+base_box_id = rospy.get_param("/boxpose_pub/base_box_id", 8)
+hold_box_id = rospy.get_param("/boxpose_pub/hold_box_id", 9)
 look_box_mode = "box-balancer"
 
 with open(box_info_fname) as yml:
