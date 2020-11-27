@@ -1,0 +1,129 @@
+format: ChoreonoidBody
+formatVersion: 1.0
+
+name: cardboard_10
+rootLink: body
+links:
+  -
+    name: body
+    jointType: free
+    mass: 10.5
+    inertia: [
+      0.04, 0,       0,
+      0,       0.05, 0,
+      0,       0,       0.05 ]
+    elements:
+      -
+        type: Shape
+        geometry: { type: Box, size: [ 0.910, 0.910, 0.025 ] }
+        appearance:
+          material:
+            diffuseColor: [ 1.0, 1.0, 1.0 ]
+      -
+        type: Transform
+        translation: [ -0.310, 0, 0.0125 ]
+        elements:
+          Shape:
+            geometry: { type: Box, size: [ 0.0225, 0.1025, 0.001 ] }
+            appearance:
+              material:
+                diffuseColor: [ 0.0, 0.0, 0.0 ]
+      -
+        type: Transform
+        translation: [ -0.390, 0, 0.0125 ]
+        elements:
+          Shape:
+            geometry: { type: Box, size: [ 0.0225, 0.1025, 0.001 ] }
+            appearance:
+              material:
+                diffuseColor: [ 0.0, 0.0, 0.0 ]
+      -
+        type: Transform
+        translation: [ -0.350, 0.040, 0.0125 ]
+        elements:
+          Shape:
+            geometry: { type: Box, size: [ 0.1025, 0.0225, 0.001 ] }
+            appearance:
+              material:
+                diffuseColor: [ 0.0, 0.0, 0.0 ]
+      -
+        type: Transform
+        translation: [ -0.350, -0.040, 0.0125 ]
+        elements:
+          Shape:
+            geometry: { type: Box, size: [ 0.1025, 0.0225, 0.001 ] }
+            appearance:
+              material:
+                diffuseColor: [ 0.0, 0.0, 0.0 ]
+      -
+        type: Transform
+        translation: [ -0.3385, 0.023, 0.0125 ]
+        elements:
+          Shape:
+            geometry: { type: Box, size: [ 0.0115, 0.0115, 0.001 ] }
+            appearance:
+              material:
+                diffuseColor: [ 0.0, 0.0, 0.0 ]
+      -
+        type: Transform
+        translation: [ -0.36725, 0.023, 0.0125 ]
+        elements:
+          Shape:
+            geometry: { type: Box, size: [ 0.023, 0.0115, 0.001 ] }
+            appearance:
+              material:
+                diffuseColor: [ 0.0, 0.0, 0.0 ]
+      -
+        type: Transform
+        translation: [ -0.327, 0.0115, 0.0125 ]
+        elements:
+          Shape:
+            geometry: { type: Box, size: [ 0.0115, 0.0115, 0.001 ] }
+            appearance:
+              material:
+                diffuseColor: [ 0.0, 0.0, 0.0 ]
+      -
+        type: Transform
+        translation: [ -0.3385, 0.0, 0.0125 ]
+        elements:
+          Shape:
+            geometry: { type: Box, size: [ 0.0115, 0.0115, 0.001 ] }
+            appearance:
+              material:
+                diffuseColor: [ 0.0, 0.0, 0.0 ]
+      -
+        type: Transform
+        translation: [ -0.3615, -0.0, 0.0125 ]
+        elements:
+          Shape:
+            geometry: { type: Box, size: [ 0.0115, 0.0115, 0.001 ] }
+            appearance:
+              material:
+                diffuseColor: [ 0.0, 0.0, 0.0 ]
+      -
+        type: Transform
+        translation: [ -0.35575, -0.0115, 0.0125 ]
+        elements:
+          Shape:
+            geometry: { type: Box, size: [ 0.023, 0.0115, 0.001 ] }
+            appearance:
+              material:
+                diffuseColor: [ 0.0, 0.0, 0.0 ]
+      -
+        type: Transform
+        translation: [ -0.3385, -0.023, 0.0125 ]
+        elements:
+          Shape:
+            geometry: { type: Box, size: [ 0.0345, 0.0115, 0.001 ] }
+            appearance:
+              material:
+                diffuseColor: [ 0.0, 0.0, 0.0 ]
+      -
+        type: Transform
+        translation: [ -0.373, -0.023, 0.0125 ]
+        elements:
+          Shape:
+            geometry: { type: Box, size: [ 0.0115, 0.0115, 0.001 ] }
+            appearance:
+              material:
+                diffuseColor: [ 0.0, 0.0, 0.0 ]
