@@ -173,7 +173,7 @@ def callback(msg):
                  box_dict[b].box_marker_data.pose.orientation.y,
                  box_dict[b].box_marker_data.pose.orientation.z,
                  box_dict[b].box_marker_data.pose.orientation.w),
-                rospy.Time.now(), "box"+str(b), "HEAD_LEFT_CAMERA")
+                rospy.Time.now(), "box"+str(b), "rs_l515_color_optical_frame")
             markers_data.markers.append(box_dict[b].box_marker_data)
             box_dict[b].probability -= 0.7
         else:
@@ -195,14 +195,14 @@ def callback(msg):
         elif base_box_id in box_dict:
             pos = np.array([box_dict[base_box_id].box_pose_data.px, box_dict[base_box_id].box_pose_data.py, box_dict[base_box_id].box_pose_data.pz])
             rot = quaternion.as_rotation_matrix(np.quaternion(box_dict[base_box_id].box_pose_data.rw, box_dict[base_box_id].box_pose_data.rx, box_dict[base_box_id].box_pose_data.ry, box_dict[base_box_id].box_pose_data.rz))
-            pos = pos + np.dot(rot, np.array([0, 0, -box_info[base_box_id]['size'][2]/2.0]))
+            pos = pos + np.dot(rot, np.array([-box_info[base_box_id]['size'][0]/2.0, 0, -box_info[base_box_id]['size'][2]/2.0]))
             point_data.point.x = pos[0]
             point_data.point.y = pos[1]
             point_data.point.z = pos[2]
         elif top_box_id in box_dict:
             pos = np.array([box_dict[top_box_id].box_pose_data.px, box_dict[top_box_id].box_pose_data.py, box_dict[top_box_id].box_pose_data.pz])
             rot = quaternion.as_rotation_matrix(np.quaternion(box_dict[top_box_id].box_pose_data.rw, box_dict[top_box_id].box_pose_data.rx, box_dict[top_box_id].box_pose_data.ry, box_dict[top_box_id].box_pose_data.rz))
-            pos = pos + np.dot(rot, np.array([0, 0, -box_info[top_box_id]['size'][2]/2.0]))
+            pos = pos + np.dot(rot, np.array([-box_info[top_box_id]['size'][0]/2.0, 0, -box_info[top_box_id]['size'][2]/2.0]))
             point_data.point.x = pos[0]
             point_data.point.y = pos[1]
             point_data.point.z = pos[2]
@@ -211,21 +211,29 @@ def callback(msg):
             point_data.point.y = 0.0
             point_data.point.z = 0.0
     elif look_box_mode == "box-balancer":
-        if top_box_id in box_dict and base_box_id in box_dict:
-            point_data.point.x = (box_dict[top_box_id].box_pose_data.px + box_dict[base_box_id].box_pose_data.px) / 2.0
-            point_data.point.y = (box_dict[top_box_id].box_pose_data.py + box_dict[base_box_id].box_pose_data.py) / 2.0
-            point_data.point.z = (box_dict[top_box_id].box_pose_data.pz + box_dict[base_box_id].box_pose_data.pz) / 2.0
-        elif top_box_id in box_dict:
+       # if top_box_id in box_dict and base_box_id in box_dict:
+       #     point_data.point.x = (box_dict[top_box_id].box_pose_data.px + box_dict[base_box_id].box_pose_data.px) / 2.0
+       #     point_data.point.y = (box_dict[top_box_id].box_pose_data.py + box_dict[base_box_id].box_pose_data.py) / 2.0
+       #     point_data.point.z = (box_dict[top_box_id].box_pose_data.pz + box_dict[base_box_id].box_pose_data.pz) / 2.0
+       # el
+        if top_box_id in box_dict:
             pos = np.array([box_dict[top_box_id].box_pose_data.px, box_dict[top_box_id].box_pose_data.py, box_dict[top_box_id].box_pose_data.pz])
             rot = quaternion.as_rotation_matrix(np.quaternion(box_dict[top_box_id].box_pose_data.rw, box_dict[top_box_id].box_pose_data.rx, box_dict[top_box_id].box_pose_data.ry, box_dict[top_box_id].box_pose_data.rz))
-            pos = pos + np.dot(rot, np.array([0, 0, -box_info[top_box_id]['size'][2]/2.0]))
+            pos = pos + np.dot(rot, np.array([-box_info[top_box_id]['size'][0]/2.0, 0, -box_info[top_box_id]['size'][2]/2.0]))
             point_data.point.x = pos[0]
             point_data.point.y = pos[1]
             point_data.point.z = pos[2]
         elif base_box_id in box_dict:
             pos = np.array([box_dict[base_box_id].box_pose_data.px, box_dict[base_box_id].box_pose_data.py, box_dict[base_box_id].box_pose_data.pz])
             rot = quaternion.as_rotation_matrix(np.quaternion(box_dict[base_box_id].box_pose_data.rw, box_dict[base_box_id].box_pose_data.rx, box_dict[base_box_id].box_pose_data.ry, box_dict[base_box_id].box_pose_data.rz))
-            pos = pos + np.dot(rot, np.array([0, 0, box_info[base_box_id]['size'][2]/2.0]))
+            pos = pos + np.dot(rot, np.array([-box_info[base_box_id]['size'][0]/2.0, 0, box_info[base_box_id]['size'][2]/2.0]))
+            point_data.point.x = pos[0]
+            point_data.point.y = pos[1]
+            point_data.point.z = pos[2]
+        elif hold_box_id in box_dict:
+            pos = np.array([box_dict[hold_box_id].box_pose_data.px, box_dict[hold_box_id].box_pose_data.py, box_dict[hold_box_id].box_pose_data.pz])
+            rot = quaternion.as_rotation_matrix(np.quaternion(box_dict[hold_box_id].box_pose_data.rw, box_dict[hold_box_id].box_pose_data.rx, box_dict[hold_box_id].box_pose_data.ry, box_dict[hold_box_id].box_pose_data.rz))
+            pos = pos + np.dot(rot, np.array([-box_info[hold_box_id]['size'][0]/2.0, 0, box_info[hold_box_id]['size'][2]/2.0]))
             point_data.point.x = pos[0]
             point_data.point.y = pos[1]
             point_data.point.z = pos[2]
@@ -266,11 +274,11 @@ def callback(msg):
         br.sendTransform(
             (rpos[0], rpos[1], rpos[2]),
             (rquat.x, rquat.y, rquat.z, rquat.w),
-            rospy.Time.now(), "rhand_pose", "HEAD_LEFT_CAMERA")
+            rospy.Time.now(), "rhand_pose", "rs_l515_color_optical_frame")
         br.sendTransform(
             (lpos[0], lpos[1], lpos[2]),
             (lquat.x, lquat.y, lquat.z, lquat.w),
-            rospy.Time.now(), "lhand_pose", "HEAD_LEFT_CAMERA")
+            rospy.Time.now(), "lhand_pose", "rs_l515_color_optical_frame")
 
     rate.sleep()
 

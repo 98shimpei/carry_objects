@@ -3,10 +3,10 @@
 	<arg name="max_new_marker_error" default="0.08" />
 	<arg name="max_track_error" default="0.5" />
 
-	<arg name="cam_image_topic" default="/multisense/left/image_color" />
+	<arg name="cam_image_topic" default="/rs_l515/color/image_raw" />
     <!-- ar_track_alvar が一定の形式のcamera_infoしか使えないような気がする？ -->
-	<arg name="cam_info_topic" default="/dummy/camera_info" />
-	<arg name="output_frame" default="/left_camera_optical_frame" />
+	<arg name="cam_info_topic" default="/rs_l515/color/camera_info" />
+	<arg name="output_frame" default="/rs_l515_color_optical_frame" />
 
 	<node name="ar_track_alvar" pkg="ar_track_alvar" type="individualMarkersNoKinect" respawn="false" output="screen" >
 		<param name="marker_size"           type="double" value="$(arg marker_size)" />
@@ -19,16 +19,16 @@
 		<remap from="camera_info"   to="$(arg cam_info_topic)" />
 	</node>
 
-    <node pkg="carry_objects" name="camera_info_pub" type="infopub.py">
-        <param name="info_yaml" type="string" value="$(find carry_objects)/config/multisense_left_camera.yaml" />
-    </node>
+    <!-- <node pkg="carry_objects" name="camera_info_pub" type="infopub.py"> -->
+    <!--     <param name="info_yaml" type="string" value="$(find carry_objects)/config/multisense_left_camera.yaml" /> -->
+    <!-- </node> -->
 
     <!-- <node pkg="carry_objects" name="marker_pub" type="arcube.py" /> -->
     <node pkg="carry_objects" name="boxpose_pub" type="boxposepub.py" output="screen" >
         <param name="info_yaml" type="string" value="$(find carry_objects)/config/box_info.yaml" />
         <param name="top_box_id" type="int" value="7" />
         <param name="base_box_id" type="int" value="8" />
-        <param name="hold_box_id" type="int" value="9" />
+        <param name="hold_box_id" type="int" value="10" />
     </node>
 
 </launch>
