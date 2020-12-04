@@ -1,5 +1,5 @@
 <launch>
-	<arg name="marker_size" default="10.25" />
+	<arg name="marker_size" default="6.95" />
 	<arg name="max_new_marker_error" default="0.08" />
 	<arg name="max_track_error" default="0.5" />
 
@@ -28,7 +28,7 @@
         <param name="info_yaml" type="string" value="$(find carry_objects)/config/box_info.yaml" />
         <param name="top_box_id" type="int" value="7" />
         <param name="base_box_id" type="int" value="8" />
-        <param name="hold_box_id" type="int" value="10" />
+        <param name="hold_box_id" type="int" value="9" />
     </node>
 
 </launch>
