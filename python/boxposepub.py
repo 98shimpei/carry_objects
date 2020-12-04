@@ -173,7 +173,7 @@ def callback(msg):
                  box_dict[b].box_marker_data.pose.orientation.y,
                  box_dict[b].box_marker_data.pose.orientation.z,
                  box_dict[b].box_marker_data.pose.orientation.w),
-                rospy.Time.now(), "box"+str(b), "rs_l515_color_optical_frame")
+                rospy.Time.now(), "box"+str(b), marker_frame_id.lstrip())
             markers_data.markers.append(box_dict[b].box_marker_data)
             box_dict[b].probability -= 0.3
         else:
@@ -189,9 +189,9 @@ def callback(msg):
     point_data.header.stamp = rospy.Time.now()
     if look_box_mode == "lift-box":
         if hold_box_id in box_dict:
-            point_data.point.x = box_dict[hold_box_id].box_pose_data.px
-            point_data.point.y = box_dict[hold_box_id].box_pose_data.py
-            point_data.point.z = box_dict[hold_box_id].box_pose_data.pz
+            point_data.point.x = box_dict[hold_box_id].markers_data[list(box_dict[hold_box_id].markers_data)[0]].marker_data.pose.position.x
+            point_data.point.y = box_dict[hold_box_id].markers_data[list(box_dict[hold_box_id].markers_data)[0]].marker_data.pose.position.y
+            point_data.point.z = box_dict[hold_box_id].markers_data[list(box_dict[hold_box_id].markers_data)[0]].marker_data.pose.position.z
         elif base_box_id in box_dict:
             pos = np.array([box_dict[base_box_id].box_pose_data.px, box_dict[base_box_id].box_pose_data.py, box_dict[base_box_id].box_pose_data.pz])
             rot = quaternion.as_rotation_matrix(np.quaternion(box_dict[base_box_id].box_pose_data.rw, box_dict[base_box_id].box_pose_data.rx, box_dict[base_box_id].box_pose_data.ry, box_dict[base_box_id].box_pose_data.rz))
@@ -275,11 +275,11 @@ def callback(msg):
         br.sendTransform(
             (rpos[0], rpos[1], rpos[2]),
             (rquat.x, rquat.y, rquat.z, rquat.w),
-            rospy.Time.now(), "rhand_pose", "rs_l515_color_optical_frame")
+            rospy.Time.now(), "rhand_pose", marker_frame_id.lstrip())
         br.sendTransform(
             (lpos[0], lpos[1], lpos[2]),
             (lquat.x, lquat.y, lquat.z, lquat.w),
-            rospy.Time.now(), "lhand_pose", "rs_l515_color_optical_frame")
+            rospy.Time.now(), "lhand_pose", marker_frame_id.lstrip())
 
     rate.sleep()
 

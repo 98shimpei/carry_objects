@@ -7,6 +7,9 @@
     <!-- ar_track_alvar が一定の形式のcamera_infoしか使えないような気がする？ -->
 	<arg name="cam_info_topic" default="/multisense_local/left/camera_info" />
 	<arg name="output_frame" default="/left_camera_optical_frame" />
+	<arg name="top_box_id" default="7" />
+	<arg name="base_box_id" default="8" />
+	<arg name="hold_box_id" default="8" />
 
 	<node name="ar_track_alvar" pkg="ar_track_alvar" type="individualMarkersNoKinect" respawn="false" output="screen" >
 		<param name="marker_size"           type="double" value="$(arg marker_size)" />
@@ -21,10 +24,10 @@
 
     <!-- <node pkg="carry_objects" name="marker_pub" type="arcube.py" /> -->
     <node pkg="carry_objects" name="boxpose_pub" type="boxposepub.py" output="screen" >
-        <param name="info_yaml" type="string" value="$(find carry_objects)/config/box_info.yaml" />
-        <param name="top_box_id" type="int" value="7" />
-        <param name="base_box_id" type="int" value="8" />
-        <param name="hold_box_id" type="int" value="10" />
+        <param name="info_yaml" type="string" value="$(find carry_objects)/config/box_info_sim.yaml" />
+        <param name="top_box_id" type="int" value="$(arg top_box_id)" />
+        <param name="base_box_id" type="int" value="$(arg base_box_id)" />
+        <param name="hold_box_id" type="int" value="$(arg hold_box_id)" />
     </node>
 
 </launch>
