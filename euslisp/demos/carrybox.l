@@ -261,8 +261,8 @@
 
   (setq hand_ave (scale 0.5 (v+ (send *rhand_pose* :pos) (send *lhand_pose* :pos))))
   (print hand_ave)
-  (if (> (elt hand_ave 0) 700) (progn 
-    (send *ri* :go-pos (* 0.001 (- (elt hand_ave 0) 700)) 0 0)
+  ;; (if (> (elt hand_ave 0) 600) (progn 
+    (send *ri* :go-pos (* 0.001 (- (elt hand_ave 0) 600)) (* 0.001 (- (elt hand_ave 1) 0)) 0)
     (unix:sleep 1)
     (unless (send *tfl* :wait-for-transform "BODY" "rhand_pose" (ros::time 0) 3) (return nil))
     (unless (send *tfl* :wait-for-transform "BODY" "lhand_pose" (ros::time 0) 3) (return nil))
@@ -273,7 +273,7 @@
     (send *current-robot* :angle-vector (send *ri* :state :potentio-vector))
     (setq *rhand_pose* (send (send *current-robot* :links :body :copy-worldcoords) :transform body->rhand-coords))
     (setq *lhand_pose* (send (send *current-robot* :links :body :copy-worldcoords) :transform body->lhand-coords))
-    ))
+    ;; ))
   (setq hand_ave (scale 0.5 (v+ (send *rhand_pose* :pos) (send *lhand_pose* :pos))))
   (setq z_move 0)
   (print hand_ave)
@@ -310,7 +310,7 @@
   (send *ri* :wait-interpolation)
   (send *ri* :stop-impedance :arms)
   (send *ri* :start-impedance :arms :K-r 100.0 :D-r 100.0 :M-r 1
-                                    :K-p 200.0 :D-p 200.0 :M-p 5)
+                                    :K-p 100.0 :D-p 100.0 :M-p 5)
 
   (send *robot* :rarm :inverse-kinematics *rhand_pose*)
   (send *robot* :larm :inverse-kinematics *lhand_pose*)
