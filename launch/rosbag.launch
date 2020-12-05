@@ -7,8 +7,9 @@
 	      -b 0
 	      /box_pose
 	      /look_at_point
-	      /multisense_local/left/camera_info
-	      /multisense_local/left/image_rect_color
+        /ar_pose_marker
+        /rs_l515/color/camera_info
+        /rs_l515/color/image_raw
 	      /tf
 	      /tf_static"
 	output="screen">
