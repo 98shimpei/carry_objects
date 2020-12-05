@@ -55,7 +55,6 @@ class BoxData:
         self.markers_data = {}
         self.probability = 1.0
 
-rate = rospy.Rate(30.0)
 def callback(msg):
     for m in msg.markers:
         if m.id in marker_to_box_dict.keys():
@@ -281,7 +280,6 @@ def callback(msg):
             (lquat.x, lquat.y, lquat.z, lquat.w),
             rospy.Time.now(), "lhand_pose", marker_frame_id.lstrip())
 
-    rate.sleep()
 
 def mode_cb(msg):
     global look_box_mode
