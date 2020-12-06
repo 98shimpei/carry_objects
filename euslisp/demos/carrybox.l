@@ -243,12 +243,28 @@
     (print "robot carries box now")
     (return-from lift-box-on-table nil))
   (setq *state* 'lift-box)
+
+  ;; 見る場所の変更
   (setq msg (instance std_msgs::string :init))
   (send msg :data (format nil "lift-box"))
   (ros::publish "look_box_mode" msg)
   (print "change look_box_mode: lift-box")
   (unix:sleep 5)
 
+  ;;把持位置へ移動
+  (unless (send *tfl* :wait-for-transform "BODY" "body_pose" (ros::time 0) 3) (return nil))
+  (setq body->body-coords (send *tfl* :lookup-transform "BODY" "body_pose" (ros::time 0)))
+  (print body->body-coords)
+  (send *current-robot* :angle-vector (send *ri* :state :potentio-vector))
+  (setq *body_pose* (send (send *current-robot* :links :body :copy-worldcoords) :transform body->body-coords))
+  (setq body-x (transform (send *body_pose* :rot) #f(1 0 0)))
+  (setq theta (* 57.2957795131 (atan2 (elt body-x 1) (elt body-x 0)))) ;;360/(2*pi)　書くのめんどかった
+  (print "theta")
+  (print theta)
+  (send *ri* :go-pos (* 0.001 (elt (send *body_pose* :pos) 0)) (* 0.001 (elt (send *body_pose* :pos) 1)) theta)
+  (unix:sleep 1)
+
+  ;;把持高さへ移動
   (unless (send *tfl* :wait-for-transform "BODY" "rhand_pose" (ros::time 0) 3) (return nil))
   (unless (send *tfl* :wait-for-transform "BODY" "lhand_pose" (ros::time 0) 3) (return nil))
   (setq body->rhand-coords (send *tfl* :lookup-transform "BODY" "rhand_pose" (ros::time 0)))
@@ -258,22 +274,6 @@
   (send *current-robot* :angle-vector (send *ri* :state :potentio-vector))
   (setq *rhand_pose* (send (send *current-robot* :links :body :copy-worldcoords) :transform body->rhand-coords))
   (setq *lhand_pose* (send (send *current-robot* :links :body :copy-worldcoords) :transform body->lhand-coords))
-
-  (setq hand_ave (scale 0.5 (v+ (send *rhand_pose* :pos) (send *lhand_pose* :pos))))
-  (print hand_ave)
-  ;; (if (> (elt hand_ave 0) 600) (progn 
-    (send *ri* :go-pos (* 0.001 (- (elt hand_ave 0) 600)) (* 0.001 (- (elt hand_ave 1) 0)) 0)
-    (unix:sleep 1)
-    (unless (send *tfl* :wait-for-transform "BODY" "rhand_pose" (ros::time 0) 3) (return nil))
-    (unless (send *tfl* :wait-for-transform "BODY" "lhand_pose" (ros::time 0) 3) (return nil))
-    (setq body->rhand-coords (send *tfl* :lookup-transform "BODY" "rhand_pose" (ros::time 0)))
-    (setq body->lhand-coords (send *tfl* :lookup-transform "BODY" "lhand_pose" (ros::time 0)))
-    (print body->rhand-coords)
-    (print body->lhand-coords)
-    (send *current-robot* :angle-vector (send *ri* :state :potentio-vector))
-    (setq *rhand_pose* (send (send *current-robot* :links :body :copy-worldcoords) :transform body->rhand-coords))
-    (setq *lhand_pose* (send (send *current-robot* :links :body :copy-worldcoords) :transform body->lhand-coords))
-    ;; ))
   (setq hand_ave (scale 0.5 (v+ (send *rhand_pose* :pos) (send *lhand_pose* :pos))))
   (setq z_move 0)
   (print hand_ave)
@@ -295,11 +295,13 @@
     (setq *lhand_pose* (send (send *current-robot* :links :body :copy-worldcoords) :transform body->lhand-coords))
     ))
   
+  ;;見る場所を戻す
   (setq msg (instance std_msgs::string :init))
   (send msg :data (format nil "box-balancer"))
   (ros::publish "look_box_mode" msg)
   (print "change look_box_mode: box-balancer")
 
+  ;;挟む
   (send *robot* :rarm :inverse-kinematics (send (send *rhand_pose* :copy-worldcoords) :transform (make-coords :pos #f(-100 0 -100))))
   (send *robot* :larm :inverse-kinematics (send (send *lhand_pose* :copy-worldcoords) :transform (make-coords :pos #f(-100 0 -100))))
   (send *ri* :angle-vector (send *robot* :angle-vector) 3000)
@@ -310,13 +312,13 @@
   (send *ri* :wait-interpolation)
   (send *ri* :stop-impedance :arms)
   (send *ri* :start-impedance :arms :K-r 100.0 :D-r 100.0 :M-r 1
-                                    :K-p 100.0 :D-p 100.0 :M-p 5)
-
+                                    :K-p 300.0 :D-p 300.0 :M-p 5)
   (send *robot* :rarm :inverse-kinematics *rhand_pose*)
   (send *robot* :larm :inverse-kinematics *lhand_pose*)
   (send *ri* :angle-vector (send *robot* :angle-vector) 3000)
   (send *ri* :wait-interpolation)
 
+  ;;力を入れる
   (if (< box_weight 0) (setq box_weight (send (send *ri* :get-box-weight) :operation_return)))
   (print box_weight)
   (send *ri* :set-ref-forces
@@ -328,12 +330,16 @@
        )
        3000)
   (unix::sleep 4)
+
+  ;;持ち上げる
   (send *robot* :arms :move-end-pos #f(0 0 50) :world)
   (send *ri* :angle-vector (send *robot* :angle-vector) 3000)
   (send *ri* :wait-interpolation)
-  ;; (send *robot* :legs :move-end-pos (float-vector 0 0 (* -1.0 z_move)))
-  ;; (send *ri* :angle-vector (send *robot* :angle-vector) 3000)
-  ;; (send *ri* :wait-interpolation)
+
+  ;;高さ戻す
+  (send *robot* :legs :move-end-pos (float-vector 0 0 (* -1.0 z_move)))
+  (send *ri* :angle-vector (send *robot* :angle-vector) 3000)
+  (send *ri* :wait-interpolation)
 
   )
 
