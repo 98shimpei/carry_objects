@@ -29,6 +29,13 @@
   (send *ri* :wait-interpolation)
   )
 
+(defun go-lift-pose ()
+  (send *robot* :larm :inverse-kinematics (make-coords :pos #f(450 320 1200) :rpy (list 0 0 (deg2rad 90))))
+  (send *robot* :rarm :inverse-kinematics (make-coords :pos #f(450 -320 1200) :rpy (list 0 0 (deg2rad -90))))
+  (send *ri* :angle-vector (send *robot* :angle-vector) 3000)
+  (send *ri* :wait-interpolation)
+  )
+
 (defun go-reset-pose ()
   (send *ri* :angle-vector (send *robot* :reset-pose))
   (send *ri* :wait-interpolation)

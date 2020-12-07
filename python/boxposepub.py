@@ -24,6 +24,7 @@ marker_frame_id = rospy.get_param("/ar_track_alvar/output_frame", "/camera")
 top_box_id = rospy.get_param("/boxpose_pub/top_box_id", 7)
 base_box_id = rospy.get_param("/boxpose_pub/base_box_id", 8)
 hold_box_id = rospy.get_param("/boxpose_pub/hold_box_id", 9)
+put_box_id = rospy.get_param("/boxpose_pub/put_box_id", 8)
 look_box_mode = "box-balancer"
 
 with open(box_info_fname) as yml:
@@ -47,6 +48,7 @@ class LookAtData:
         self.transition = 0.0
         self.old_local_pos = blocal
         self.new_local_pos = blocal
+        self.look_at_pos = np.array([0, 0, 0])
         self.transition_rate = 0.1
     def new_target(self, bid, blocal):
         if bid < 0:
@@ -58,17 +60,33 @@ class LookAtData:
             self.local_pos = blocal
             self.transiton = 0.0
         if not (self.id == bid and np.linalg.norm(self.new_local_pos - blocal) < 0.001):
-            tmppos, dummyrot = box_dict[self.id].local_to_camera(self.local_pos)
-            self.old_local_pos, dummyrot = box_dict[bid].camera_to_local(tmppos)
+            self.old_local_pos, dummyrot = box_dict[bid].camera_to_local(self.look_at_pos)
             self.new_local_pos = blocal
             self.id = bid
             self.transition = 1.0
-    def update(self):
+    def publish(self):
         if self.transition > 0:
             self.transition -= self.transition_rate
             if self.transition < 0:
                 self.transition = 0
             self.local_pos = self.transition * self.old_local_pos + (1 - self.transition) * self.new_local_pos
+        point_data = PointStamped()
+        point_data.header.stamp = rospy.Time.now()
+        if self.id in box_dict:
+            self.look_at_pos, dummy_rot = box_dict[self.id].local_to_camera(self.local_pos)
+            point_data.point.x = self.look_at_pos[0]
+            point_data.point.y = self.look_at_pos[1]
+            point_data.point.z = self.look_at_pos[2]
+            br = tf.TransformBroadcaster()
+            br.sendTransform(
+                (self.look_at_pos[0], self.look_at_pos[1], self.look_at_pos[2]),
+                (0, 0, 0, 1),
+                rospy.Time.now(), "look_at_point", marker_frame_id.lstrip())
+        else:
+            point_data.point.x = 0.0
+            point_data.point.y = 0.0
+            point_data.point.z = 0.0
+        look_at_point_pub.publish(point_data)
 
 look_at_data = LookAtData(base_box_id, np.array([-box_info[base_box_id]['size'][0]/2.0, 0, box_info[base_box_id]['size'][2]/2.0]))
 
@@ -99,7 +117,14 @@ class BoxData:
         tmprot = np.dot(self.rot.T, camera_rot)
         return tmppos, tmprot
 
+goal_box = BoxData()
+goal_box.probability = 0.0
+
 def callback(msg):
+    top_box_id = rospy.get_param("/boxpose_pub/top_box_id", 7)
+    base_box_id = rospy.get_param("/boxpose_pub/base_box_id", 8)
+    hold_box_id = rospy.get_param("/boxpose_pub/hold_box_id", 9)
+    put_box_id = rospy.get_param("/boxpose_pub/put_box_id", 8)
     #マーカーについて
     for m in msg.markers:
         if m.id in marker_to_box_dict.keys():
@@ -186,6 +211,33 @@ def callback(msg):
             box_dict[b].box_marker_data.lifetime = rospy.Duration()
             box_dict[b].box_marker_data.type = 1
 
+    #目標の箱について
+    if put_box_id in box_dict:
+        goal_box.pos, goal_box.rot = box_dict[put_box_id].local_to_camera(np.array([0, 0, 0.5 * (box_info[hold_box_id]['size'][2] + box_info[put_box_id]['size'][2])]))
+        goal_box.quat = quaternion.from_rotation_matrix(goal_box.rot, nonorthogonal=True)
+        goal_box.probability = 1.0
+
+        goal_box.box_marker_data.header = box_dict[put_box_id].box_marker_data.header
+        goal_box.box_marker_data.ns = "goal_box"
+        goal_box.box_marker_data.id = 100
+        goal_box.box_marker_data.pose.position.x = goal_box.pos[0]
+        goal_box.box_marker_data.pose.position.y = goal_box.pos[1]
+        goal_box.box_marker_data.pose.position.z = goal_box.pos[2]
+        goal_box.box_marker_data.pose.orientation.x = goal_box.quat.x
+        goal_box.box_marker_data.pose.orientation.y = goal_box.quat.y
+        goal_box.box_marker_data.pose.orientation.z = goal_box.quat.z
+        goal_box.box_marker_data.pose.orientation.w = goal_box.quat.w
+        goal_box.box_marker_data.color.r = 0.0
+        goal_box.box_marker_data.color.g = 1.0
+        goal_box.box_marker_data.color.b = 0.0
+        goal_box.box_marker_data.color.a = 0.2
+        goal_box.box_marker_data.scale.x = box_info[hold_box_id]['size'][0]
+        goal_box.box_marker_data.scale.y = box_info[hold_box_id]['size'][1]
+        goal_box.box_marker_data.scale.z = box_info[hold_box_id]['size'][2]
+        goal_box.box_marker_data.lifetime = rospy.Duration()
+        goal_box.box_marker_data.type = 1
+
+
 
     #publish
     box_poses_data = BoxPoses()
@@ -231,13 +283,30 @@ def callback(msg):
             box_del_list.append(b)
     for b in box_del_list:
         box_dict.pop(b)
+
+    if goal_box.probability > 0:
+        goal_box.box_marker_data.action = Marker.ADD
+        br = tf.TransformBroadcaster()
+        br.sendTransform(
+            (goal_box.pos[0],
+             goal_box.pos[1],
+             goal_box.pos[2]),
+            (goal_box.quat.x,
+             goal_box.quat.y,
+             goal_box.quat.z,
+             goal_box.quat.w),
+            rospy.Time.now(), "goal_box", marker_frame_id.lstrip())
+        markers_data.markers.append(goal_box.box_marker_data)
+        goal_box.probability -= 0.3
+    elif goal_box.probability > -5:
+        goal_box.box_marker_data.action = Marker.DELETE
+        goal_box.probability = -10
+        markers_data.markers.append(goal_box.box_marker_data)
+
     markers_pub.publish(markers_data)
     box_pose_pub.publish(box_poses_data)
 
     #look_at_pointを出力
-    point_data = PointStamped()
-    point_data.header.stamp = rospy.Time.now()
-
     bid = -1
     blocal = np.array([0, 0, 0])
     if look_box_mode == "lift-box":
@@ -260,26 +329,18 @@ def callback(msg):
         elif hold_box_id in box_dict:
             bid = hold_box_id
             blocal = np.array([-box_info[hold_box_id]['size'][0]/2.0, 0, box_info[hold_box_id]['size'][2]/2.0])
+    elif look_box_mode == "put-box":
+        if put_box_id in box_dict:
+            bid = put_box_id
+            blocal = np.array([-box_info[hold_box_id]['size'][0]/2.0, 0, box_info[hold_box_id]['size'][2]/2.0])
+        elif hold_box_id in box_dict:
+            bid = hold_box_id
+            blocal = np.array([-box_info[hold_box_id]['size'][0]/2.0, 0, -box_info[hold_box_id]['size'][2]/2.0])
     
     if bid > 0:
         look_at_data.new_target(bid, blocal)
-    look_at_data.update()
-    if look_at_data.id in box_dict:
-        pos, dummy_rot = box_dict[look_at_data.id].local_to_camera(look_at_data.local_pos)
-        point_data.point.x = pos[0]
-        point_data.point.y = pos[1]
-        point_data.point.z = pos[2]
-        br = tf.TransformBroadcaster()
-        br.sendTransform(
-            (pos[0], pos[1], pos[2]),
-            (0, 0, 0, 1),
-            rospy.Time.now(), "look_at_point", marker_frame_id.lstrip())
-    else:
-        point_data.point.x = 0.0
-        point_data.point.y = 0.0
-        point_data.point.z = 0.0
+    look_at_data.publish()
 
-    look_at_point_pub.publish(point_data)
     
     #持つ箱について手の位置・体の位置の目標TFを出力
     if hold_box_id in box_dict:
@@ -291,6 +352,14 @@ def callback(msg):
                 (tfpos[0], tfpos[1], tfpos[2]),
                 (tfquat.x, tfquat.y, tfquat.z, tfquat.w),
                 rospy.Time.now(), tag, marker_frame_id.lstrip())
+    if goal_box.probability > 0:
+        for tag in ['rhand_pose', 'lhand_pose', 'body_pose']:
+            tfpos, tfrot = goal_box.local_to_camera(np.array(box_info[hold_box_id][tag]['pos']), np.array(box_info[hold_box_id][tag]['rot']))
+            tfquat = quaternion.from_rotation_matrix(tfrot, nonorthogonal=True)
+            br.sendTransform(
+                (tfpos[0], tfpos[1], tfpos[2]),
+                (tfquat.x, tfquat.y, tfquat.z, tfquat.w),
+                rospy.Time.now(), 'goal_'+tag, marker_frame_id.lstrip())
 
 def mode_cb(msg):
     global look_box_mode
