@@ -36,7 +36,7 @@ links:
           Shape:
             geometry:
               type: Box
-              size: [ 0.2, 2.4, 0.02 ]
+              size: [ 2.0, 2.4, 0.01 ]
             appearance:
               material:
                 diffuseColor: [ 0.45, 0.30, 0.18 ]

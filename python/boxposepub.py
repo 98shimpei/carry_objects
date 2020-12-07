@@ -312,7 +312,7 @@ def callback(msg):
     if look_box_mode == "lift-box":
         if hold_box_id in box_dict:
             bid = hold_box_id
-            blocal = np.array(box_info[hold_box_id]['markers'][list(box_info[hold_box_id]['markers'])[0]]['pos'])
+            blocal = np.array([-box_info[hold_box_id]['size'][0]/2.0, 0, -box_info[hold_box_id]['size'][2]/2.0])
         elif base_box_id in box_dict:
             bid = base_box_id
             blocal = np.array([-box_info[base_box_id]['size'][0]/2.0, 0, -box_info[base_box_id]['size'][2]/2.0])
