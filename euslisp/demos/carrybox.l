@@ -5,6 +5,8 @@
 (ros::load-ros-manifest "roseus")
 (ros::roseus-add-msgs "geometry_msgs")
 
+(setq *impedance_mode* nil)
+
 (defun start (&optional (simulation nil))
   (if simulation (setq *simulation_mode* t) (setq *simulation_mode* nil))
   (setq *robot* *jaxon_red*)
@@ -56,6 +58,7 @@
   (send *ri* :stop-impedance :arms)
   (send *ri* :start-impedance :arms :K-r 50.0 :D-r 50.0 :M-r 1
                                     :K-p 70.0 :D-p 70.0 :M-p 5)
+  (setq *impedance_mode* t)
 
   (send *robot* :rarm :inverse-kinematics (make-coords :pos #f(530 -350 950) :rpy (list 0 0 (deg2rad -90)))) 
   (send *robot* :larm :inverse-kinematics (make-coords :pos #f(530 350 950) :rpy (list 0 0 (deg2rad 90)))) 
@@ -97,6 +100,7 @@
   (send *ri* :stop-impedance :arms)
   (send *ri* :start-impedance :arms :K-r 200.0 :D-r 200.0 :M-r 5
                                     :K-p 100.0 :D-p 100.0 :M-p 5) ;; 10000 / 300
+  (setq *impedance_mode* t)
   (send *robot* :larm :inverse-kinematics (make-coords :pos #f(470 110 950) :rpy (list 0 0 0)))
   (send *robot* :rarm :inverse-kinematics (make-coords :pos #f(470 -110 950) :rpy (list 0 0 0)))
   (send *ri* :angle-vector (send *robot* :angle-vector) 3000)
@@ -148,6 +152,7 @@
   (send *ri* :stop-impedance :arms)
   (send *ri* :start-impedance :arms :K-r 200.0 :D-r 200.0 :M-r 5
                                     :K-p 1000.0 :D-p 1000.0 :M-p 5) ;; 10000 / 300
+  (setq *impedance_mode* t)
   (send *robot* :larm :inverse-kinematics (make-coords :pos #f(380 135 1100) :rpy (list (deg2rad -90) 0 0)))
   (send *robot* :rarm :inverse-kinematics (make-coords :pos #f(380 -135 1100) :rpy (list (deg2rad 90) 0 0)))
   (send *ri* :angle-vector (send *robot* :angle-vector) 3000)
@@ -186,6 +191,7 @@
   (send *ri* :stop-impedance :arms)
   (send *ri* :start-impedance :arms :K-r 200.0 :D-r 200.0 :M-r 5
                                     :K-p 1000.0 :D-p 500.0 :M-p 5) ;; 10000 / 300
+  (setq *impedance_mode* t)
   (send *robot* :reset-pose)
   (send *robot* :rarm :shoulder-r :joint-angle -80)
   (send *robot* :larm :shoulder-r :joint-angle 80)
@@ -308,11 +314,35 @@
     ))
   ;;置く
   ;; TODO : 回転で正しくない
-  (send *robot* :rarm :move-end-pos rdiff :world)
-  (send *robot* :larm :move-end-pos ldiff :world)
-  (send *robot* :arms :move-end-pos #f(0 0 10) :world)
-  (send *ri* :angle-vector (send *robot* :angle-vector) 3000)
-  (send *ri* :wait-interpolation)
+  (setq hand_ave_diff (* 0.5 (+ (norm (float-vector (elt rdiff 0) (elt rdiff 1))) (norm (float-vector (elt ldiff 0) (elt ldiff 1))))))
+  (while (> hand_ave_diff 10) (progn
+    (print hand_ave_diff)
+    (send *robot* :rarm :move-end-pos rdiff :world)
+    (send *robot* :larm :move-end-pos ldiff :world)
+    (send *robot* :arms :move-end-pos #f(0 0 15) :world)
+    (send *ri* :angle-vector (send *robot* :angle-vector) 3000)
+    (send *ri* :wait-interpolation)
+    ;;箱の状態取得
+    (unless (send *tfl* :wait-for-transform "BODY" "rhand_pose" (ros::time 0) 3) (return nil))
+    (unless (send *tfl* :wait-for-transform "BODY" "lhand_pose" (ros::time 0) 3) (return nil))
+    (setq body->rhand-coords (send *tfl* :lookup-transform "BODY" "rhand_pose" (ros::time 0)))
+    (setq body->lhand-coords (send *tfl* :lookup-transform "BODY" "lhand_pose" (ros::time 0)))
+    (send *current-robot* :angle-vector (send *ri* :state :potentio-vector))
+    (setq *rhand_pose* (send (send *current-robot* :links :body :copy-worldcoords) :transform body->rhand-coords))
+    (setq *lhand_pose* (send (send *current-robot* :links :body :copy-worldcoords) :transform body->lhand-coords))
+    (unless (send *tfl* :wait-for-transform "BODY" "goal_rhand_pose" (ros::time 0) 3) (return nil))
+    (unless (send *tfl* :wait-for-transform "BODY" "goal_lhand_pose" (ros::time 0) 3) (return nil))
+    (setq body->rhand-coords (send *tfl* :lookup-transform "BODY" "goal_rhand_pose" (ros::time 0)))
+    (setq body->lhand-coords (send *tfl* :lookup-transform "BODY" "goal_lhand_pose" (ros::time 0)))
+    (send *current-robot* :angle-vector (send *ri* :state :potentio-vector))
+    (setq *goal_rhand_pose* (send (send *current-robot* :links :body :copy-worldcoords) :transform body->rhand-coords))
+    (setq *goal_lhand_pose* (send (send *current-robot* :links :body :copy-worldcoords) :transform body->lhand-coords))
+
+    (setq rdiff (v- (send *goal_rhand_pose* :worldpos) (send *rhand_pose* :worldpos)))
+    (setq ldiff (v- (send *goal_lhand_pose* :worldpos) (send *lhand_pose* :worldpos)))
+    (setq hand_ave_diff (* 0.5 (+ (norm (float-vector (elt rdiff 0) (elt rdiff 1))) (norm (float-vector (elt ldiff 0) (elt ldiff 1))))))
+  ))
+  (print hand_ave_diff)
 
   (send *ri* :set-ref-forces
         (list
@@ -321,10 +351,10 @@
          (float-vector 0 0 0) ;;rarm -260  mg/2
          (float-vector 0 0 0) ;;larm -285
          )
-         3000)
-  (unix:sleep 3)
-  (send *robot* :rarm :inverse-kinematics (send (send *goal_rhand_pose* :copy-worldcoords) :transform (make-coords :pos #f(0 0 -150))))
-  (send *robot* :larm :inverse-kinematics (send (send *goal_lhand_pose* :copy-worldcoords) :transform (make-coords :pos #f(0 0 -150))))
+         2000)
+  (unix:sleep 2)
+  (send *robot* :rarm :inverse-kinematics (send (send *goal_rhand_pose* :copy-worldcoords) :transform (make-coords :pos #f(0 0 -200))))
+  (send *robot* :larm :inverse-kinematics (send (send *goal_lhand_pose* :copy-worldcoords) :transform (make-coords :pos #f(0 0 -200))))
   (send *ri* :angle-vector (send *robot* :angle-vector) 3000)
   (send *ri* :wait-interpolation)
   (setq *state* 'put)
@@ -345,7 +375,7 @@
   (send msg :data (format nil "lift-box"))
   (ros::publish "look_box_mode" msg)
   (print "change look_box_mode: lift-box")
-  (unix:sleep 5)
+  (unix:sleep 3)
 
   ;;把持位置へ移動
   (unless (send *tfl* :wait-for-transform "BODY" "body_pose" (ros::time 0) 3) (return nil))
@@ -357,8 +387,10 @@
   (setq theta (* 57.2957795131 (atan2 (elt body-x 1) (elt body-x 0)))) ;;360/(2*pi)　書くのめんどかった
   (print "theta")
   (print theta)
-  (send *ri* :go-pos (* 0.001 (elt (send *body_pose* :worldpos) 0)) (* 0.001 (elt (send *body_pose* :worldpos) 1)) theta)
-  (unix:sleep 1)
+  (if (or (> (norm (float-vector (elt (send *body_pose* :worldpos) 0) (elt (send *body_pose* :worldpos) 1) 0)) 150) (> theta 20)) (progn
+    (send *ri* :go-pos (* 0.001 (elt (send *body_pose* :worldpos) 0)) (* 0.001 (elt (send *body_pose* :worldpos) 1)) theta)
+    (unix:sleep 1)
+  ))
 
   ;;把持高さへ移動
   (unless (send *tfl* :wait-for-transform "BODY" "rhand_pose" (ros::time 0) 3) (return nil))
@@ -392,17 +424,18 @@
   (print "change look_box_mode: box-balancer")
 
   ;;挟む
-  (send *robot* :rarm :inverse-kinematics (send (send *rhand_pose* :copy-worldcoords) :transform (make-coords :pos #f(-150 -100 -150))))
-  (send *robot* :larm :inverse-kinematics (send (send *lhand_pose* :copy-worldcoords) :transform (make-coords :pos #f(-150  100 -150))))
+  (send *robot* :rarm :inverse-kinematics (send (send *rhand_pose* :copy-worldcoords) :transform (make-coords :pos #f(-100 0 -150))))
+  (send *robot* :larm :inverse-kinematics (send (send *lhand_pose* :copy-worldcoords) :transform (make-coords :pos #f(-100 0 -150))))
   (send *ri* :angle-vector (send *robot* :angle-vector) 3000)
   (send *ri* :wait-interpolation)
   (send *robot* :rarm :inverse-kinematics (send (send *rhand_pose* :copy-worldcoords) :transform (make-coords :pos #f(0 0 -100))))
   (send *robot* :larm :inverse-kinematics (send (send *lhand_pose* :copy-worldcoords) :transform (make-coords :pos #f(0 0 -100))))
   (send *ri* :angle-vector (send *robot* :angle-vector) 3000)
   (send *ri* :wait-interpolation)
-  (send *ri* :stop-impedance :arms)
-  (send *ri* :start-impedance :arms :K-r 100.0 :D-r 100.0 :M-r 1
-                                    :K-p 300.0 :D-p 300.0 :M-p 5)
+  (unless *impedance_mode* (progn
+    (send *ri* :start-impedance :arms :K-r 100.0 :D-r 100.0 :M-r 1
+                                      :K-p 300.0 :D-p 300.0 :M-p 5)
+    (setq *impedance_mode* t)))
   (send *robot* :rarm :inverse-kinematics (send (send *rhand_pose* :copy-worldcoords) :transform (make-coords :pos #f(0 0 -30))))
   (send *robot* :larm :inverse-kinematics (send (send *lhand_pose* :copy-worldcoords) :transform (make-coords :pos #f(0 0 -30))))
   (send *ri* :angle-vector (send *robot* :angle-vector) 3000)
@@ -419,7 +452,7 @@
        (float-vector 0 (*  1 nip_force) (* -1.0 (* box_weight 4.9))) ;;larm -285
        )
        3000)
-  (unix::sleep 4)
+  (unix::sleep 3)
 
   ;; ;;持ち上げる
   ;; (send *robot* :arms :move-end-pos #f(0 0 50) :world)
@@ -444,7 +477,7 @@
     (send msg :data (format nil "lift-box"))
     (ros::publish "look_box_mode" msg)
     (print "change look_box_mode: lift-box")
-    (unix:sleep 3)
+    (unix:sleep 2)
     (unless (send *tfl* :wait-for-transform "goal_rhand_pose" "rhand_pose" (ros::time 0) 3) (return nil))
     (unless (send *tfl* :wait-for-transform "goal_lhand_pose" "lhand_pose" (ros::time 0) 3) (return nil))
     (setq rnow->rgoal (send *tfl* :lookup-transform "rhand_pose" "goal_rhand_pose" (ros::time 0)))
