@@ -41,6 +41,10 @@ look_at_point_pub = rospy.Publisher("look_at_point", PointStamped, queue_size = 
 
 box_dict = {}
 
+listener = tf.TransformListener()
+world_to_camera_pos = np.array([0, 0, 0])
+world_to_camera_rot = np.identity(3)
+
 class LookAtData:
     def __init__(self, bid, blocal):
         self.id = bid
@@ -106,6 +110,9 @@ class BoxData:
         self.rot = np.identity(3)
         self.quat = np.quaternion(1, 0, 0, 0)
         self.probability = 1.0
+        self.initflag = True
+        self.fixed_pos = np.array([0, 0, 0])
+        self.fixed_rot = np.identity(3)
         
     def local_to_camera(self, local_pos, local_rot = np.identity(3)):
         tmppos = self.pos + np.dot(self.rot, local_pos)
@@ -117,10 +124,53 @@ class BoxData:
         tmprot = np.dot(self.rot.T, camera_rot)
         return tmppos, tmprot
 
+    def pose_update(self, pos, rot, quat):
+        self.pos = pos
+        self.rot = rot
+        self.quat = quat
+        tmp_pos = world_to_camera_pos + np.dot(world_to_camera_rot, self.pos)
+        tmp_rot = np.dot(world_to_camera_rot, self.rot)
+        ft = 0.05
+        if self.initflag:
+            ft = 1.0
+            self.initflag = False
+        self.fixed_pos = (1.0-ft) * self.fixed_pos + ft * tmp_pos
+        self.fixed_rot = (1.0-ft) * self.fixed_rot + ft * tmp_rot
+    
+    def disappear(self):
+        self.box_marker_data.color.r = 0.0
+        self.box_marker_data.color.g = 0.0
+        self.box_marker_data.color.b = 1.0
+
+    def marker_pose_update(self):
+        self.box_marker_data.pose.position.x = self.pos[0]
+        self.box_marker_data.pose.position.y = self.pos[1]
+        self.box_marker_data.pose.position.z = self.pos[2]
+        self.box_marker_data.pose.orientation.x = self.quat.x
+        self.box_marker_data.pose.orientation.y = self.quat.y
+        self.box_marker_data.pose.orientation.z = self.quat.z
+        self.box_marker_data.pose.orientation.w = self.quat.w
+        self.box_marker_data.header.frame_id = marker_frame_id.lstrip()
+        self.box_marker_data.header.stamp = rospy.Time.now()
+
+    def pose_estimate(self):
+        self.pos = np.dot(world_to_camera_rot.T, (self.fixed_pos - world_to_camera_pos))
+        self.rot = np.dot(world_to_camera_rot.T, self.fixed_rot)
+        self.quat = quaternion.from_rotation_matrix(self.rot)
+
+
 goal_box = BoxData()
 goal_box.probability = 0.0
 
 def callback(msg):
+    global world_to_camera_pos, world_to_camera_rot
+    start_time = rospy.Time.now()
+    try:
+        p, q = listener.lookupTransform('/map', marker_frame_id, rospy.Time(0))
+        world_to_camera_pos = np.array(p)
+        world_to_camera_rot = quaternion.as_rotation_matrix(np.quaternion(q[3], q[0], q[1], q[2])) #w,x,y,z
+    except:
+        print("tf listen error")
     top_box_id = rospy.get_param("/boxpose_pub/top_box_id", 7)
     base_box_id = rospy.get_param("/boxpose_pub/base_box_id", 8)
     hold_box_id = rospy.get_param("/boxpose_pub/hold_box_id", 9)
@@ -150,13 +200,13 @@ def callback(msg):
             marker.type = 1
 
             delay = rospy.Time.now() - m.header.stamp
-            rospy.loginfo("marker_id: " + str(m.id) + " delay: " + str(delay.secs * 1000 + delay.nsecs / 1000000) + "ms")
+            #rospy.loginfo("marker_id: " + str(m.id) + " delay: " + str(delay.secs * 1000 + delay.nsecs / 1000000) + "ms")
 
             b_pos = np.array([m.pose.pose.position.x, m.pose.pose.position.y, m.pose.pose.position.z])
             b_rot = np.dot(quaternion.as_rotation_matrix(np.quaternion(m.pose.pose.orientation.w, m.pose.pose.orientation.x, m.pose.pose.orientation.y, m.pose.pose.orientation.z)), np.array(box_info[marker_to_box_dict[m.id]]['markers'][m.id]['rot']).T)
             b_pos = m_pos + np.dot(b_rot, -np.array(box_info[marker_to_box_dict[m.id]]['markers'][m.id]['pos']))
 
-            if not marker_to_box_dict[m.id] in box_dict:
+            if (not marker_to_box_dict[m.id] in box_dict) or box_dict[marker_to_box_dict[m.id]].probability < 0:
                 box_dict[marker_to_box_dict[m.id]] = BoxData()
             box_dict[marker_to_box_dict[m.id]].box_pose_data.header = m.header
             box_dict[marker_to_box_dict[m.id]].box_marker_data.header = m.header
@@ -178,9 +228,7 @@ def callback(msg):
             rot = rot / probability_sum
             quat = quaternion.from_rotation_matrix(rot, nonorthogonal=True)
 
-            box_dict[b].pos = pos
-            box_dict[b].rot = rot
-            box_dict[b].quat = quat
+            box_dict[b].pose_update(pos, rot, quat)
 
             box_dict[b].box_pose_data.px = pos[0]
             box_dict[b].box_pose_data.py = pos[1]
@@ -194,13 +242,6 @@ def callback(msg):
 
             box_dict[b].box_marker_data.ns = "box"
             box_dict[b].box_marker_data.id = b
-            box_dict[b].box_marker_data.pose.position.x = pos[0]
-            box_dict[b].box_marker_data.pose.position.y = pos[1]
-            box_dict[b].box_marker_data.pose.position.z = pos[2]
-            box_dict[b].box_marker_data.pose.orientation.x = quat.x
-            box_dict[b].box_marker_data.pose.orientation.y = quat.y
-            box_dict[b].box_marker_data.pose.orientation.z = quat.z
-            box_dict[b].box_marker_data.pose.orientation.w = quat.w
             box_dict[b].box_marker_data.color.r = 1.0
             box_dict[b].box_marker_data.color.g = 1.0
             box_dict[b].box_marker_data.color.b = 0.0
@@ -210,6 +251,7 @@ def callback(msg):
             box_dict[b].box_marker_data.scale.z = box_info[b]['size'][2]
             box_dict[b].box_marker_data.lifetime = rospy.Duration()
             box_dict[b].box_marker_data.type = 1
+            box_dict[b].box_marker_data.action = Marker.ADD
 
     #目標の箱について
     if put_box_id in box_dict:
@@ -252,7 +294,7 @@ def callback(msg):
             if box_dict[b].markers_data[m].probability > 0:
                 box_dict[b].markers_data[m].marker_data.action = Marker.ADD
                 markers_data.markers.append(box_dict[b].markers_data[m].marker_data)
-                box_dict[b].markers_data[m].probability -= 0.3
+                box_dict[b].markers_data[m].probability -= 0.8
             else:
                 box_dict[b].markers_data[m].marker_data.action = Marker.DELETE
                 markers_data.markers.append(box_dict[b].markers_data[m].marker_data)
@@ -261,28 +303,28 @@ def callback(msg):
             box_dict[b].markers_data.pop(m)
         #箱
         if box_dict[b].probability > 0:
-            box_dict[b].box_marker_data.action = Marker.ADD
             box_poses_data.existence = True
             box_poses_data.header.stamp = box_dict[b].box_pose_data.header.stamp
             box_poses_data.poses.append(box_dict[b].box_pose_data)
-            br = tf.TransformBroadcaster()
-            br.sendTransform(
-                (box_dict[b].pos[0],
-                 box_dict[b].pos[1],
-                 box_dict[b].pos[2]),
-                (box_dict[b].quat.x,
-                 box_dict[b].quat.y,
-                 box_dict[b].quat.z,
-                 box_dict[b].quat.w),
-                rospy.Time.now(), "box"+str(b), marker_frame_id.lstrip())
-            markers_data.markers.append(box_dict[b].box_marker_data)
-            box_dict[b].probability -= 0.3
+            box_dict[b].probability -= 0.8
+        elif box_dict[b].probability > -5:
+            box_dict[b].disappear()
+            box_dict[b].pose_estimate()
+            box_dict[b].probability = -10
         else:
-            box_dict[b].box_marker_data.action = Marker.DELETE
-            markers_data.markers.append(box_dict[b].box_marker_data)
-            box_del_list.append(b)
-    for b in box_del_list:
-        box_dict.pop(b)
+            box_dict[b].pose_estimate()
+        br = tf.TransformBroadcaster()
+        br.sendTransform(
+            (box_dict[b].pos[0],
+             box_dict[b].pos[1],
+             box_dict[b].pos[2]),
+            (box_dict[b].quat.x,
+             box_dict[b].quat.y,
+             box_dict[b].quat.z,
+             box_dict[b].quat.w),
+            rospy.Time.now(), "box"+str(b), marker_frame_id.lstrip())
+        box_dict[b].marker_pose_update()
+        markers_data.markers.append(box_dict[b].box_marker_data)
 
     if goal_box.probability > 0:
         goal_box.box_marker_data.action = Marker.ADD
@@ -360,6 +402,9 @@ def callback(msg):
                 (tfpos[0], tfpos[1], tfpos[2]),
                 (tfquat.x, tfquat.y, tfquat.z, tfquat.w),
                 rospy.Time.now(), 'goal_'+tag, marker_frame_id.lstrip())
+    end_time = rospy.Time.now()
+    callback_time = end_time - start_time
+    rospy.loginfo("boxposetime: " + str(callback_time.secs * 1000 + callback_time.nsecs / 1000000) + "ms")
 
 def mode_cb(msg):
     global look_box_mode

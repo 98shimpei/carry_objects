@@ -277,8 +277,14 @@
   (setq hand_ave_diff (* 0.5 (+ (norm rdiff) (norm ldiff))))
   (if (> hand_ave_diff 200) (progn
     ;;高さ変更
-    (send *robot* :arms :move-end-pos (float-vector 0 0 (+ (elt (scale 0.5 (v+ rdiff ldiff)) 2) 100)) :world)
-    (send *ri* :angle-vector (send *robot* :angle-vector) 3000)
+    (setq move-z (+ (elt (scale 0.5 (v+ rdiff ldiff)) 2) 100))
+    (while (> move-z 100) (progn
+      (send *robot* :arms :move-end-pos (float-vector 0 0 100) :world)
+      (send *ri* :angle-vector (send *robot* :angle-vector) 1000)
+      (send *ri* :wait-interpolation)
+      (setq move-z (- move-z 100))))
+    (send *robot* :arms :move-end-pos (float-vector 0 0 move-z) :world)
+    (send *ri* :angle-vector (send *robot* :angle-vector) 1000)
     (send *ri* :wait-interpolation)
     
     ;;置く位置へ移動
@@ -388,6 +394,8 @@
   (print "theta")
   (print theta)
   (if (or (> (norm (float-vector (elt (send *body_pose* :worldpos) 0) (elt (send *body_pose* :worldpos) 1) 0)) 150) (> theta 20)) (progn
+    (go-lift-pose)
+    (send *ri* :go-pos 0 0 -0.3)
     (send *ri* :go-pos (* 0.001 (elt (send *body_pose* :worldpos) 0)) (* 0.001 (elt (send *body_pose* :worldpos) 1)) theta)
     (unix:sleep 1)
   ))
