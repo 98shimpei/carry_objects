@@ -25,6 +25,7 @@
     <!-- <node pkg="carry_objects" name="marker_pub" type="arcube.py" /> -->
     <node pkg="carry_objects" name="boxpose_pub" type="boxposepub.py" output="screen" >
         <param name="info_yaml" type="string" value="$(find carry_objects)/config/box_info_sim.yaml" />
+        <param name="world_tf" type="string" value="/map" />
         <param name="top_box_id" type="int" value="$(arg top_box_id)" />
         <param name="base_box_id" type="int" value="$(arg base_box_id)" />
         <param name="hold_box_id" type="int" value="$(arg hold_box_id)" />
