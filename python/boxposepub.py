@@ -21,6 +21,7 @@ from std_msgs.msg import String
 box_info_fname = rospy.get_param("/boxpose_pub/info_yaml", "../config/box_info.yaml")
 marker_size = rospy.get_param("/ar_track_alvar/marker_size", 5.0) * 0.01 #cm -> m
 marker_frame_id = rospy.get_param("/ar_track_alvar/output_frame", "/camera")
+world_tf = rospy.get_param("/boxpose_pub/world_tf", "/odom_ground")
 top_box_id = rospy.get_param("/boxpose_pub/top_box_id", 7)
 base_box_id = rospy.get_param("/boxpose_pub/base_box_id", 8)
 hold_box_id = rospy.get_param("/boxpose_pub/hold_box_id", 9)
@@ -166,7 +167,7 @@ def callback(msg):
     global world_to_camera_pos, world_to_camera_rot
     start_time = rospy.Time.now()
     try:
-        p, q = listener.lookupTransform('/map', marker_frame_id, rospy.Time(0))
+        p, q = listener.lookupTransform(world_tf, marker_frame_id, rospy.Time(0))
         world_to_camera_pos = np.array(p)
         world_to_camera_rot = quaternion.as_rotation_matrix(np.quaternion(q[3], q[0], q[1], q[2])) #w,x,y,z
     except:
