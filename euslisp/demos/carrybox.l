@@ -258,6 +258,8 @@
     (if (string= frame "goal_lhand_pose") (setq *goal_lhand_pose* (send (send *current-robot* :links :body :copy-worldcoords) :transform body->target-coords)))
     (if (string= frame "body_pose") (setq *body_pose* (send (send *current-robot* :links :body :copy-worldcoords) :transform body->target-coords)))
     (if (string= frame "goal_body_pose") (setq *goal_body_pose* (send (send *current-robot* :links :body :copy-worldcoords) :transform body->target-coords)))
+    (if (string= frame "rarm_end_coords") (setq *rarm_end_coords* (send (send *current-robot* :links :body :copy-worldcoords) :transform body->target-coords)))
+    (if (string= frame "larm_end_coords") (setq *larm_end_coords* (send (send *current-robot* :links :body :copy-worldcoords) :transform body->target-coords)))
     ))
   )
 
@@ -393,12 +395,6 @@
     (update-tf-pose (list "rhand_pose" "lhand_pose"))
     ))
   
-  ;;見る場所を戻す
-  (setq msg (instance std_msgs::string :init))
-  (send msg :data (format nil "box-balancer"))
-  (ros::publish "look_box_mode" msg)
-  (print "change look_box_mode: box-balancer")
-
   ;;挟む
   (print "挟む")
   (send *robot* :rarm :inverse-kinematics (send (send *rhand_pose* :copy-worldcoords) :transform (make-coords :pos #f(-150 0 -100))))
@@ -414,8 +410,11 @@
     (send *ri* :start-impedance :arms :K-r 100.0 :D-r 100.0 :M-r 1
                                       :K-p 300.0 :D-p 300.0 :M-p 5)
     (setq *impedance_mode* t)))
-  (send *robot* :rarm :inverse-kinematics (send *rhand_pose* :copy-worldcoords))
-  (send *robot* :larm :inverse-kinematics (send *lhand_pose* :copy-worldcoords))
+  (update-tf-pose (list "rhand_pose" "lhand_pose" "rarm_end_coords" "larm_end_coords"))
+  (setq rdiff (v- (send *rhand_pose* :worldpos) (send *rarm_end_coords* :worldpos)))
+  (setq ldiff (v- (send *lhand_pose* :worldpos) (send *larm_end_coords* :worldpos)))
+  (send *robot* :rarm :move-end-pos rdiff :world)
+  (send *robot* :larm :move-end-pos ldiff :world)
   (send *ri* :angle-vector (send *robot* :angle-vector) 3000)
   (send *ri* :wait-interpolation)
 
@@ -438,8 +437,14 @@
   ;; (send *ri* :angle-vector (send *robot* :angle-vector) 3000)
   ;; (send *ri* :wait-interpolation)
 
+  ;;見る場所を戻す
+  (setq msg (instance std_msgs::string :init))
+  (send msg :data (format nil "box-balancer"))
+  (ros::publish "look_box_mode" msg)
+  (print "change look_box_mode: box-balancer")
+
   ;;高さ戻す
-  (print "かがんだ分高さ戻す")
+  (if (> z_move 0) (print "かがんだ分高さ戻す"))
   (send *robot* :legs :move-end-pos (float-vector 0 0 (* -1.0 z_move)) :world)
   (send *ri* :angle-vector (send *robot* :angle-vector) 3000)
   (send *ri* :wait-interpolation)
