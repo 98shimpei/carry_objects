@@ -279,6 +279,7 @@
   (setq hand_ave_diff (* 0.5 (+ (norm rdiff) (norm ldiff))))
   (if (> hand_ave_diff 200) (progn
     ;;高さ変更
+    (print "高さ変更")
     (setq move-z (+ (elt (scale 0.5 (v+ rdiff ldiff)) 2) 100))
     (while (> move-z 100) (progn
       (send *robot* :arms :move-end-pos (float-vector 0 0 100) :world)
@@ -290,6 +291,7 @@
     (send *ri* :wait-interpolation)
     
     ;;置く位置へ移動
+    (print "置く位置へ移動")
     (update-tf-pose (list "goal_body_pose"))
     (setq body-x (transform (send *goal_body_pose* :worldrot) #f(1 0 0)))
     (setq theta (* 57.2957795131 (atan2 (elt body-x 1) (elt body-x 0)))) ;;360/(2*pi)　書くのめんどかった
@@ -303,6 +305,7 @@
     ))
   ;;置く
   ;; TODO : 回転で正しくない
+  (print "置く位置決め")
   (setq hand_ave_diff (* 0.5 (+ (norm (float-vector (elt rdiff 0) (elt rdiff 1))) (norm (float-vector (elt ldiff 0) (elt ldiff 1))))))
   (while (> hand_ave_diff 10) (progn
     (print hand_ave_diff)
@@ -319,6 +322,7 @@
   ))
   (print hand_ave_diff)
 
+  (print "力を弱める")
   (send *ri* :set-ref-forces
         (list
          (float-vector 0 0 (* (send *robot* :weight) 4.9))
@@ -328,6 +332,7 @@
          )
          2000)
   (unix:sleep 2)
+  (print "置く")
   (send *robot* :rarm :inverse-kinematics (send (send *goal_rhand_pose* :copy-worldcoords) :transform (make-coords :pos #f(0 0 -150))))
   (send *robot* :larm :inverse-kinematics (send (send *goal_lhand_pose* :copy-worldcoords) :transform (make-coords :pos #f(0 0 -150))))
   (send *ri* :angle-vector (send *robot* :angle-vector) 3000)
@@ -340,7 +345,6 @@
   (unless (string= *state* 'put)
     (print "robot carries box now")
     (return-from lift-box-on-table nil))
-  (setq *state* 'lift-box)
 
   ;;target設定
   (ros::set-param "/boxpose_pub/hold_box_id" (elt target-list 0))
@@ -356,18 +360,18 @@
   (update-tf-pose (list "body_pose"))
   (setq body-x (transform (send *body_pose* :worldrot) #f(1 0 0)))
   (setq theta (* 57.2957795131 (atan2 (elt body-x 1) (elt body-x 0)))) ;;360/(2*pi)　書くのめんどかった
-  (print "theta")
-  (print theta)
   (if (or (> (norm (float-vector (elt (send *body_pose* :worldpos) 0) (elt (send *body_pose* :worldpos) 1) 0)) 150) (> theta 20)) (progn
     (go-lift-pose)
     ;;一度20cm手前に移動
-    (setq *body_pose* (send (send (send *current-robot* :links :body :copy-worldcoords) :transform body->body-coords) :transform (make-coords :pos #f(-200 0 0))))
+    (print "20cm手前へ移動")
+    (setq *body_pose* (send *body_pose* :transform (make-coords :pos #f(-200 0 0))))
     (setq body-x (transform (send *body_pose* :rot) #f(1 0 0)))
     (setq theta (* 57.2957795131 (atan2 (elt body-x 1) (elt body-x 0)))) ;;360/(2*pi)　書くのめんどかった
     (send *ri* :go-pos (* 0.001 (elt (send *body_pose* :worldpos) 0)) (* 0.001 (elt (send *body_pose* :worldpos) 1)) theta)
     (unix:sleep 1)
 
     ;;再度*body_pose*を設定し、移動
+    (print "把持位置へ移動")
     (update-tf-pose (list "body_pose"))
     (setq body-x (transform (send *body_pose* :rot) #f(1 0 0)))
     (setq theta (* 57.2957795131 (atan2 (elt body-x 1) (elt body-x 0)))) ;;360/(2*pi)　書くのめんどかった
@@ -380,6 +384,7 @@
   (setq hand_ave (scale 0.5 (v+ (send *rhand_pose* :worldpos) (send *lhand_pose* :worldpos))))
   (setq z_move 0)
   (if (< (elt hand_ave 2) 1000) (progn
+    (print "かがむ")
     (setq z_move (- 1000 (elt hand_ave 2)))
     (send *robot* :legs :move-end-pos (float-vector 0 0 z_move))
     (send *ri* :angle-vector (send *robot* :angle-vector) 6000)
@@ -395,6 +400,7 @@
   (print "change look_box_mode: box-balancer")
 
   ;;挟む
+  (print "挟む")
   (send *robot* :rarm :inverse-kinematics (send (send *rhand_pose* :copy-worldcoords) :transform (make-coords :pos #f(-150 0 -100))))
   (send *robot* :larm :inverse-kinematics (send (send *lhand_pose* :copy-worldcoords) :transform (make-coords :pos #f(-150 0 -100))))
   (send *ri* :angle-vector (send *robot* :angle-vector) 3000)
@@ -414,6 +420,7 @@
   (send *ri* :wait-interpolation)
 
   ;;力を入れる
+  (print "力を入れる")
   (if (< box_weight 0) (setq box_weight (send (send *ri* :get-box-weight) :operation_return)))
   (print box_weight)
   (send *ri* :set-ref-forces
@@ -432,10 +439,11 @@
   ;; (send *ri* :wait-interpolation)
 
   ;;高さ戻す
+  (print "かがんだ分高さ戻す")
   (send *robot* :legs :move-end-pos (float-vector 0 0 (* -1.0 z_move)) :world)
   (send *ri* :angle-vector (send *robot* :angle-vector) 3000)
   (send *ri* :wait-interpolation)
-
+  (setq *state* 'lift-box)
   )
 
 (defun align-boxes (target-list)
@@ -455,10 +463,11 @@
     (setq rnow->rgoal (send *tfl* :lookup-transform "rhand_pose" "goal_rhand_pose" (ros::time 0)))
     (setq lnow->lgoal (send *tfl* :lookup-transform "lhand_pose" "goal_lhand_pose" (ros::time 0)))
     (setq hand_ave_diff (* 0.5 (+ (norm (send rnow->rgoal :pos)) (norm (send lnow->lgoal :pos)))))
-    (print hand_ave_diff)
-    (if (> hand_ave_diff 200) (progn (go-lift-pose) (send *ri* :go-pos -0.2 0 0)))
+    (if (> hand_ave_diff 200) (progn (print "箱を持つ前に下がっておく") (go-lift-pose) (send *ri* :go-pos -0.2 0 0)))
     (if (> hand_ave_diff 40) (progn
+      (print "lift-box-on-table")
       (lift-box-on-table lift-targets (* 1.5 (length lift-targets)) 100)
+      (print "put-on-box")
       (put-on-box put-target)))
     (align-boxes lift-targets))))
 
