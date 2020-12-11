@@ -366,6 +366,8 @@
 
   ;;target設定
   (ros::set-param "/boxpose_pub/hold_box_id" (elt target-list 0))
+  (ros::set-param "/boxpose_pub/top_box_id" (elt target-list (- (length target-list) 1)))
+  (if (= (length target-list) 1) (ros::set-param "/boxpose_pub/base_box_id" (elt target-list 0)) (ros::set-param "/boxpose_pub/base_box_id" (elt target-list (- (length target-list) 2))))
   (setq msg (instance std_msgs::Bool :init))
   (send msg :data t)
   (ros::publish "update_box_id" msg)
