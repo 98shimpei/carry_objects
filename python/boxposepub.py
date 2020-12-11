@@ -176,6 +176,7 @@ def callback(msg):
     base_box_id = rospy.get_param("/boxpose_pub/base_box_id", 8)
     hold_box_id = rospy.get_param("/boxpose_pub/hold_box_id", 9)
     put_box_id = rospy.get_param("/boxpose_pub/put_box_id", 8)
+    a_time = rospy.Time.now()
     #マーカーについて
     for m in msg.markers:
         if m.id in marker_to_box_dict.keys():
@@ -196,7 +197,7 @@ def callback(msg):
             marker.color.a = 0.5
             marker.scale.x = marker_size
             marker.scale.y = marker_size
-            marker.scale.z = marker_size * 0.02;
+            marker.scale.z = marker_size * 0.02
             marker.lifetime = rospy.Duration()
             marker.type = 1
 
@@ -280,7 +281,7 @@ def callback(msg):
         goal_box.box_marker_data.lifetime = rospy.Duration()
         goal_box.box_marker_data.type = 1
 
-
+    b_time = rospy.Time.now()
 
     #publish
     box_poses_data = BoxPoses()
@@ -349,6 +350,8 @@ def callback(msg):
     markers_pub.publish(markers_data)
     box_pose_pub.publish(box_poses_data)
 
+    c_time = rospy.Time.now()
+
     #look_at_pointを出力
     bid = -1
     blocal = np.array([0, 0, 0])
@@ -385,6 +388,8 @@ def callback(msg):
     look_at_data.publish()
 
     
+    d_time = rospy.Time.now()
+
     #持つ箱について手の位置・体の位置の目標TFを出力
     if hold_box_id in box_dict:
         br = tf.TransformBroadcaster()
@@ -403,9 +408,27 @@ def callback(msg):
                 (tfpos[0], tfpos[1], tfpos[2]),
                 (tfquat.x, tfquat.y, tfquat.z, tfquat.w),
                 rospy.Time.now(), 'goal_'+tag, marker_frame_id.lstrip())
-    end_time = rospy.Time.now()
-    callback_time = end_time - start_time
-    rospy.loginfo("boxposetime: " + str(callback_time.secs * 1000 + callback_time.nsecs / 1000000) + "ms")
+    e_time = rospy.Time.now()
+    a_t = (a_time - start_time).secs + float((a_time - start_time).nsecs) / 1000000000
+    b_t = (b_time - a_time).secs + float((b_time - a_time).nsecs) / 1000000000
+    c_t = (c_time - b_time).secs + float((c_time - b_time).nsecs) / 1000000000
+    d_t = (d_time - c_time).secs + float((d_time - c_time).nsecs) / 1000000000
+    e_t = (e_time - d_time).secs + float((e_time - d_time).nsecs) / 1000000000
+    all_t = (e_time - start_time).secs + float((e_time - start_time).nsecs) / 1000000000
+    if all_t > 0 :
+        rospy.loginfo(
+            " " + "{:.3f}".format(all_t) + " "
+            " " + "{:.3f}".format(a_t) + " "
+            " " + "{:.3f}".format(b_t) + " "
+            " " + "{:.3f}".format(c_t) + " "
+            " " + "{:.3f}".format(d_t) + " "
+            " " + "{:.3f}".format(e_t) + " "
+            " " + "{:.2f}".format(a_t / all_t) + " "
+            " " + "{:.2f}".format(b_t / all_t) + " "
+            " " + "{:.2f}".format(c_t / all_t) + " "
+            " " + "{:.2f}".format(d_t / all_t) + " "
+            " " + "{:.2f}".format(e_t / all_t) + " "
+            )
 
 def mode_cb(msg):
     global look_box_mode
