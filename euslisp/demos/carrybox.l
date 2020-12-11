@@ -320,6 +320,7 @@
   (send *robot* :arms :move-end-pos #f(0 0 15) :world)
   (send *ri* :angle-vector (send *robot* :angle-vector) 3000)
   (send *ri* :wait-interpolation)
+  (unix:sleep 3)
   ;;箱の状態取得
   (update-tf-pose (list "rhand_pose" "lhand_pose" "goal_rhand_pose" "goal_lhand_pose"))
   (setq rdiff (v- (send *goal_rhand_pose* :worldpos) (send *rhand_pose* :worldpos)))
@@ -332,6 +333,7 @@
     (send *robot* :arms :move-end-pos #f(0 0 15) :world)
     (send *ri* :angle-vector (send *robot* :angle-vector) 3000)
     (send *ri* :wait-interpolation)
+    (unix:sleep 3)
     ;;箱の状態取得
     (update-tf-pose (list "rhand_pose" "lhand_pose" "goal_rhand_pose" "goal_lhand_pose"))
     (setq rdiff (v- (send *goal_rhand_pose* :worldpos) (send *rhand_pose* :worldpos)))
