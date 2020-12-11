@@ -172,11 +172,12 @@ def callback(msg):
         world_to_camera_rot = quaternion.as_rotation_matrix(np.quaternion(q[3], q[0], q[1], q[2])) #w,x,y,z
     except:
         print("tf listen error")
+    a_time = rospy.Time.now()
     top_box_id = rospy.get_param("/boxpose_pub/top_box_id", 7)
     base_box_id = rospy.get_param("/boxpose_pub/base_box_id", 8)
     hold_box_id = rospy.get_param("/boxpose_pub/hold_box_id", 9)
     put_box_id = rospy.get_param("/boxpose_pub/put_box_id", 8)
-    a_time = rospy.Time.now()
+    b_time = rospy.Time.now()
     #マーカーについて
     for m in msg.markers:
         if m.id in marker_to_box_dict.keys():
@@ -281,7 +282,7 @@ def callback(msg):
         goal_box.box_marker_data.lifetime = rospy.Duration()
         goal_box.box_marker_data.type = 1
 
-    b_time = rospy.Time.now()
+    c_time = rospy.Time.now()
 
     #publish
     box_poses_data = BoxPoses()
@@ -350,7 +351,7 @@ def callback(msg):
     markers_pub.publish(markers_data)
     box_pose_pub.publish(box_poses_data)
 
-    c_time = rospy.Time.now()
+    d_time = rospy.Time.now()
 
     #look_at_pointを出力
     bid = -1
@@ -387,9 +388,6 @@ def callback(msg):
         look_at_data.new_target(bid, blocal)
     look_at_data.publish()
 
-    
-    d_time = rospy.Time.now()
-
     #持つ箱について手の位置・体の位置の目標TFを出力
     if hold_box_id in box_dict:
         br = tf.TransformBroadcaster()
@@ -417,12 +415,12 @@ def callback(msg):
     all_t = (e_time - start_time).secs + float((e_time - start_time).nsecs) / 1000000000
     if all_t > 0 :
         rospy.loginfo(
-            " " + "{:.3f}".format(all_t) + " "
+            " " + "{:.3f}".format(all_t) + "  "
             " " + "{:.3f}".format(a_t) + " "
             " " + "{:.3f}".format(b_t) + " "
             " " + "{:.3f}".format(c_t) + " "
             " " + "{:.3f}".format(d_t) + " "
-            " " + "{:.3f}".format(e_t) + " "
+            " " + "{:.3f}".format(e_t) + "  "
             " " + "{:.2f}".format(a_t / all_t) + " "
             " " + "{:.2f}".format(b_t / all_t) + " "
             " " + "{:.2f}".format(c_t / all_t) + " "
