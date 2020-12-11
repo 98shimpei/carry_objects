@@ -4,6 +4,7 @@
 (load "package://carry_objects/euslisp/utils.l")
 (ros::load-ros-manifest "roseus")
 (ros::roseus-add-msgs "geometry_msgs")
+(ros::roseus-add-msgs "std_msgs")
 
 (setq *impedance_mode* nil)
 
@@ -241,6 +242,7 @@
 
 (ros::roseus "carrybox")
 (setq *tfl* (instance ros::transform-listener :init))
+(ros::advertise "update_box_id" std_msgs::Bool 1)
 (ros::advertise "look_box_mode" std_msgs::string 1)
 (setq *current-robot* (instance jaxon_red-robot :init))
 (send *current-robot* :fix-leg-to-coords (make-coords))
@@ -268,6 +270,9 @@
     (print "robot not carries box now")
     (return-from put-on-box nil))
   (ros::set-param "/boxpose_pub/put_box_id" put-box-id)
+  (setq msg (instance std_msgs::Bool :init))
+  (send msg :data t)
+  (ros::publish "update_box_id" msg)
   (setq msg (instance std_msgs::string :init))
   (send msg :data (format nil "put-box"))
   (ros::publish "look_box_mode" msg)
@@ -308,6 +313,17 @@
   ;;置く
   ;; TODO : 回転で正しくない
   (print "置く位置決め")
+  (setq hand_ave_diff (* 0.5 (+ (norm (float-vector (elt rdiff 0) (elt rdiff 1))) (norm (float-vector (elt ldiff 0) (elt ldiff 1))))))
+  (print hand_ave_diff)
+  (send *robot* :rarm :move-end-pos rdiff :world)
+  (send *robot* :larm :move-end-pos ldiff :world)
+  (send *robot* :arms :move-end-pos #f(0 0 15) :world)
+  (send *ri* :angle-vector (send *robot* :angle-vector) 3000)
+  (send *ri* :wait-interpolation)
+  ;;箱の状態取得
+  (update-tf-pose (list "rhand_pose" "lhand_pose" "goal_rhand_pose" "goal_lhand_pose"))
+  (setq rdiff (v- (send *goal_rhand_pose* :worldpos) (send *rhand_pose* :worldpos)))
+  (setq ldiff (v- (send *goal_lhand_pose* :worldpos) (send *lhand_pose* :worldpos)))
   (setq hand_ave_diff (* 0.5 (+ (norm (float-vector (elt rdiff 0) (elt rdiff 1))) (norm (float-vector (elt ldiff 0) (elt ldiff 1))))))
   (while (> hand_ave_diff 10) (progn
     (print hand_ave_diff)
@@ -350,6 +366,9 @@
 
   ;;target設定
   (ros::set-param "/boxpose_pub/hold_box_id" (elt target-list 0))
+  (setq msg (instance std_msgs::Bool :init))
+  (send msg :data t)
+  (ros::publish "update_box_id" msg)
 
   ;; 見る場所の変更
   (setq msg (instance std_msgs::string :init))
@@ -458,6 +477,9 @@
   (if lift-targets (progn
     (ros::set-param "/boxpose_pub/put_box_id" put-target)
     (ros::set-param "/boxpose_pub/hold_box_id" (elt lift-targets 0))
+    (setq msg (instance std_msgs::Bool :init))
+    (send msg :data t)
+    (ros::publish "update_box_id" msg)
     (setq msg (instance std_msgs::string :init))
     (send msg :data (format nil "lift-box"))
     (ros::publish "look_box_mode" msg)

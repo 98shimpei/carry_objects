@@ -17,6 +17,7 @@ from visualization_msgs.msg import Marker
 from geometry_msgs.msg import PointStamped
 from geometry_msgs.msg import PoseStamped
 from std_msgs.msg import String
+from std_msgs.msg import Bool
 
 box_info_fname = rospy.get_param("/boxpose_pub/info_yaml", "../config/box_info.yaml")
 marker_size = rospy.get_param("/ar_track_alvar/marker_size", 5.0) * 0.01 #cm -> m
@@ -173,11 +174,6 @@ def callback(msg):
     except:
         print("tf listen error")
     a_time = rospy.Time.now()
-    top_box_id = rospy.get_param("/boxpose_pub/top_box_id", 7)
-    base_box_id = rospy.get_param("/boxpose_pub/base_box_id", 8)
-    hold_box_id = rospy.get_param("/boxpose_pub/hold_box_id", 9)
-    put_box_id = rospy.get_param("/boxpose_pub/put_box_id", 8)
-    b_time = rospy.Time.now()
     #マーカーについて
     for m in msg.markers:
         if m.id in marker_to_box_dict.keys():
@@ -282,7 +278,7 @@ def callback(msg):
         goal_box.box_marker_data.lifetime = rospy.Duration()
         goal_box.box_marker_data.type = 1
 
-    c_time = rospy.Time.now()
+    b_time = rospy.Time.now()
 
     #publish
     box_poses_data = BoxPoses()
@@ -351,7 +347,7 @@ def callback(msg):
     markers_pub.publish(markers_data)
     box_pose_pub.publish(box_poses_data)
 
-    d_time = rospy.Time.now()
+    c_time = rospy.Time.now()
 
     #look_at_pointを出力
     bid = -1
@@ -387,6 +383,8 @@ def callback(msg):
     if bid > 0:
         look_at_data.new_target(bid, blocal)
     look_at_data.publish()
+
+    d_time = rospy.Time.now()
 
     #持つ箱について手の位置・体の位置の目標TFを出力
     if hold_box_id in box_dict:
@@ -432,7 +430,15 @@ def mode_cb(msg):
     global look_box_mode
     look_box_mode = msg.data
     print(look_box_mode)
+
+def read_box_id(msg):
+    global top_box_id, base_box_id, hold_box_id, put_box_id
+    top_box_id = rospy.get_param("/boxpose_pub/top_box_id", 7)
+    base_box_id = rospy.get_param("/boxpose_pub/base_box_id", 8)
+    hold_box_id = rospy.get_param("/boxpose_pub/hold_box_id", 9)
+    put_box_id = rospy.get_param("/boxpose_pub/put_box_id", 8)
     
 rospy.Subscriber("ar_pose_marker", AlvarMarkers, callback)
 rospy.Subscriber("look_box_mode", String, mode_cb)
+rospy.Subscriber("update_box_id", Bool, read_box_id)
 rospy.spin()
