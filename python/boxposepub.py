@@ -164,8 +164,10 @@ class BoxData:
 goal_box = BoxData()
 goal_box.probability = 0.0
 
+cb_count = 0
+
 def callback(msg):
-    global world_to_camera_pos, world_to_camera_rot
+    global world_to_camera_pos, world_to_camera_rot, cb_count
     start_time = rospy.Time.now()
     try:
         p, q = listener.lookupTransform(world_tf, marker_frame_id, rospy.Time(0))
@@ -312,31 +314,31 @@ def callback(msg):
             box_dict[b].probability = -10
         else:
             box_dict[b].pose_estimate()
-        br = tf.TransformBroadcaster()
-        br.sendTransform(
-            (box_dict[b].pos[0],
-             box_dict[b].pos[1],
-             box_dict[b].pos[2]),
-            (box_dict[b].quat.x,
-             box_dict[b].quat.y,
-             box_dict[b].quat.z,
-             box_dict[b].quat.w),
-            rospy.Time.now(), "box"+str(b), marker_frame_id.lstrip())
+        #br = tf.TransformBroadcaster()
+        #br.sendTransform(
+        #    (box_dict[b].pos[0],
+        #     box_dict[b].pos[1],
+        #     box_dict[b].pos[2]),
+        #    (box_dict[b].quat.x,
+        #     box_dict[b].quat.y,
+        #     box_dict[b].quat.z,
+        #     box_dict[b].quat.w),
+        #    rospy.Time.now(), "box"+str(b), marker_frame_id.lstrip())
         box_dict[b].marker_pose_update()
         markers_data.markers.append(box_dict[b].box_marker_data)
 
     if goal_box.probability > 0:
         goal_box.box_marker_data.action = Marker.ADD
-        br = tf.TransformBroadcaster()
-        br.sendTransform(
-            (goal_box.pos[0],
-             goal_box.pos[1],
-             goal_box.pos[2]),
-            (goal_box.quat.x,
-             goal_box.quat.y,
-             goal_box.quat.z,
-             goal_box.quat.w),
-            rospy.Time.now(), "goal_box", marker_frame_id.lstrip())
+        #br = tf.TransformBroadcaster()
+        #br.sendTransform(
+        #    (goal_box.pos[0],
+        #     goal_box.pos[1],
+        #     goal_box.pos[2]),
+        #    (goal_box.quat.x,
+        #     goal_box.quat.y,
+        #     goal_box.quat.z,
+        #     goal_box.quat.w),
+        #    rospy.Time.now(), "goal_box", marker_frame_id.lstrip())
         markers_data.markers.append(goal_box.box_marker_data)
         goal_box.probability -= 0.3
     elif goal_box.probability > -5:
@@ -387,23 +389,34 @@ def callback(msg):
     d_time = rospy.Time.now()
 
     #持つ箱について手の位置・体の位置の目標TFを出力
-    if hold_box_id in box_dict:
-        br = tf.TransformBroadcaster()
-        for tag in ['rhand_pose', 'lhand_pose', 'body_pose']:
+    cb_count += 1
+    if cb_count%3 == 0:
+        tag = 'rhand_pose'
+    elif cb_count%3 == 1:
+        tag = 'lhand_pose'
+    elif cb_count%3 == 2:
+        tag = 'body_pose'
+    if cb_count <= 3:
+        if hold_box_id in box_dict:
+            br = tf.TransformBroadcaster()
             tfpos, tfrot = box_dict[hold_box_id].local_to_camera(np.array(box_info[hold_box_id][tag]['pos']), np.array(box_info[hold_box_id][tag]['rot']))
             tfquat = quaternion.from_rotation_matrix(tfrot, nonorthogonal=True)
             br.sendTransform(
                 (tfpos[0], tfpos[1], tfpos[2]),
                 (tfquat.x, tfquat.y, tfquat.z, tfquat.w),
                 rospy.Time.now(), tag, marker_frame_id.lstrip())
-    if goal_box.probability > 0:
-        for tag in ['rhand_pose', 'lhand_pose', 'body_pose']:
+    else:
+        if goal_box.probability > 0:
+            br = tf.TransformBroadcaster()
             tfpos, tfrot = goal_box.local_to_camera(np.array(box_info[hold_box_id][tag]['pos']), np.array(box_info[hold_box_id][tag]['rot']))
             tfquat = quaternion.from_rotation_matrix(tfrot, nonorthogonal=True)
             br.sendTransform(
                 (tfpos[0], tfpos[1], tfpos[2]),
                 (tfquat.x, tfquat.y, tfquat.z, tfquat.w),
                 rospy.Time.now(), 'goal_'+tag, marker_frame_id.lstrip())
+    if cb_count == 6:
+        cb_count = 0
+
     e_time = rospy.Time.now()
     a_t = (a_time - start_time).secs + float((a_time - start_time).nsecs) / 1000000000
     b_t = (b_time - a_time).secs + float((b_time - a_time).nsecs) / 1000000000

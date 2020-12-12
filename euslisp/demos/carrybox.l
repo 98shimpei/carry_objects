@@ -45,6 +45,8 @@
   (send *ri* :remove-force-sensor-offset-rmfo-arms)
   (send *robot* :fix-leg-to-coords (make-coords))
   (setq *state* 'put)
+  (print "close hands")
+  (send *ri* :move-gripper :arms 0.3 :wait t)
   )
 
 (defun lift-box (&optional (box_weight -1) (nip_force 50) (box_width 310))
@@ -302,6 +304,24 @@
     (update-tf-pose (list "goal_body_pose"))
     (setq body-x (transform (send *goal_body_pose* :worldrot) #f(1 0 0)))
     (setq theta (* 57.2957795131 (atan2 (elt body-x 1) (elt body-x 0)))) ;;360/(2*pi)　書くのめんどかった
+    (while (or (> (norm (float-vector (elt (send *goal_body_pose* :worldpos) 0) (elt (send *goal_body_pose* :worldpos) 1))) 100) (> theta 15)) (progn
+      (setq vel (float-vector (elt (send *goal_body_pose* :worldpos) 0) (elt (send *goal_body_pose* :worldpos) 1)))
+      (setq vel (scale (/ 100.0 (norm vel)) vel))
+      (setq omega_abs (min 5.0 (abs (* 0.8 theta)))) ;;360/(2*pi)　書くのめんどかった
+      (setq omega (if (> theta 0) omega_abs (- omega_abs)))
+      (print vel)
+      (print omega)
+      (send *ri* :go-velocity (* 0.001 (elt vel 0)) (* 0.001 (elt vel 1)) omega)
+      (unix:sleep 1)
+      (update-tf-pose (list "goal_body_pose"))
+      (setq body-x (transform (send *goal_body_pose* :rot) #f(1 0 0)))
+      (setq theta (* 57.2957795131 (atan2 (elt body-x 1) (elt body-x 0)))) ;;360/(2*pi)　書くのめんどかった
+      ))
+    (send *ri* :go-stop)
+    (unix:sleep 1)
+    (update-tf-pose (list "goal_body_pose"))
+    (setq body-x (transform (send *goal_body_pose* :worldrot) #f(1 0 0)))
+    (setq theta (* 57.2957795131 (atan2 (elt body-x 1) (elt body-x 0)))) ;;360/(2*pi)　書くのめんどかった
     (send *ri* :go-pos (* 0.001 (elt (send *goal_body_pose* :worldpos) 0)) (* 0.001 (elt (send *goal_body_pose* :worldpos) 1)) theta)
     (unix:sleep 1)
 
@@ -333,7 +353,7 @@
     (send *robot* :arms :move-end-pos #f(0 0 15) :world)
     (send *ri* :angle-vector (send *robot* :angle-vector) 3000)
     (send *ri* :wait-interpolation)
-    (unix:sleep 3)
+    (unix:sleep 1)
     ;;箱の状態取得
     (update-tf-pose (list "rhand_pose" "lhand_pose" "goal_rhand_pose" "goal_lhand_pose"))
     (setq rdiff (v- (send *goal_rhand_pose* :worldpos) (send *rhand_pose* :worldpos)))
@@ -361,10 +381,10 @@
   )
 
 
-(defun lift-box-on-table (target-list box_weight &optional (nip_force 50))
+(defun lift-box-simple (target-list box_weight &optional (nip_force 50))
   (unless (string= *state* 'put)
     (print "robot carries box now")
-    (return-from lift-box-on-table nil))
+    (return-from lift-box-simple nil))
 
   ;;target設定
   (ros::set-param "/boxpose_pub/hold_box_id" (elt target-list 0))
@@ -387,12 +407,26 @@
   (setq theta (* 57.2957795131 (atan2 (elt body-x 1) (elt body-x 0)))) ;;360/(2*pi)　書くのめんどかった
   (if (or (> (norm (float-vector (elt (send *body_pose* :worldpos) 0) (elt (send *body_pose* :worldpos) 1) 0)) 150) (> theta 20)) (progn
     (go-lift-pose)
-    ;;一度20cm手前に移動
+    (setq *pre_body_pose* (send *body_pose* :transform (make-coords :pos #f(-200 0 0))))
+    (setq body-x (transform (send *pre_body_pose* :rot) #f(1 0 0)))
+    (setq theta (* 57.2957795131 (atan2 (elt body-x 1) (elt body-x 0)))) ;;360/(2*pi)　書くのめんどかった
     (print "20cm手前へ移動")
-    (setq *body_pose* (send *body_pose* :transform (make-coords :pos #f(-200 0 0))))
+  ;;一度20cm手前に移動
+  (while (or (> (norm (float-vector (elt (send *pre_body_pose* :worldpos) 0) (elt (send *pre_body_pose* :worldpos) 1))) 100) (> theta 15)) (progn
+    (setq vel (float-vector (elt (send *pre_body_pose* :worldpos) 0) (elt (send *pre_body_pose* :worldpos) 1)))
+    (setq vel (scale (/ 100.0 (norm vel)) vel))
+    (setq omega_abs (min 5.0 (abs (* 0.8 theta)))) ;;360/(2*pi)　書くのめんどかった
+    (setq omega (if (> theta 0) omega_abs (- omega_abs)))
+    (print vel)
+    (print omega)
+    (send *ri* :go-velocity (* 0.001 (elt vel 0)) (* 0.001 (elt vel 1)) omega)
+    (unix:sleep 1)
+    (update-tf-pose (list "body_pose"))
+    (setq *pre_body_pose* (send *body_pose* :transform (make-coords :pos #f(-200 0 0))))
     (setq body-x (transform (send *body_pose* :rot) #f(1 0 0)))
     (setq theta (* 57.2957795131 (atan2 (elt body-x 1) (elt body-x 0)))) ;;360/(2*pi)　書くのめんどかった
-    (send *ri* :go-pos (* 0.001 (elt (send *body_pose* :worldpos) 0)) (* 0.001 (elt (send *body_pose* :worldpos) 1)) theta)
+    ))
+    (send *ri* :go-stop)
     (unix:sleep 1)
 
     ;;再度*body_pose*を設定し、移動
@@ -474,7 +508,19 @@
   (setq *state* 'lift-box)
   )
 
+(defun lift-box-on-table (target-list)
+  (while (align-boxes target-list) (print "align-boxes"))
+  (print "lift")
+  (send *ri* :set-box-balancer)
+  (lift-box-simple target-list (* 1.5 (length target-list)) 100)
+  (send *ri* :start-box-balancer nil nil)
+  (send *robot* :arms :move-end-pos #f(0 0 100) :world)
+  (send *ri* :angle-vector (send *robot* :angle-vector))
+  (send *ri* :wait-interpolation)
+  )
+
 (defun align-boxes (target-list)
+  (setq align-flag nil)
   (print target-list)
   (setq put-target (car target-list))
   (setq lift-targets (cdr target-list))
@@ -496,11 +542,16 @@
     (setq hand_ave_diff (* 0.5 (+ (norm (send rnow->rgoal :pos)) (norm (send lnow->lgoal :pos)))))
     (if (> hand_ave_diff 200) (progn (print "箱を持つ前に下がっておく") (go-lift-pose) (send *ri* :go-pos -0.2 0 0)))
     (if (> hand_ave_diff 40) (progn
-      (print "lift-box-on-table")
-      (lift-box-on-table lift-targets (* 1.5 (length lift-targets)) 100)
+      (print "lift-box-simple")
+      (lift-box-simple lift-targets (* 1.5 (length lift-targets)) 100)
       (print "put-on-box")
-      (put-on-box put-target)))
-    (align-boxes lift-targets))))
+      (put-on-box put-target))
+      (setq align-flag t))
+    (or (align-boxes lift-targets) align-flag)
+    )
+    nil
+    )
+  )
 
 (defun put-box (&optional (wait-time 10))
   (unix:sleep wait-time)
