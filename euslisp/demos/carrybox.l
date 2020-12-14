@@ -180,6 +180,9 @@
          )
          2000)
   (unix:sleep 2)
+  (setq req (instance carry_objects::LiftBoxRequest :init))
+  (send req :boxes (list))
+  (setq box_weight (send (ros::service-call "lift_box_id" req) :weight))
   (print "置く")
   (send *robot* :rarm :inverse-kinematics (send (send *goal_rhand_pose* :copy-worldcoords) :transform (make-coords :pos #f(0 0 -150))))
   (send *robot* :larm :inverse-kinematics (send (send *goal_lhand_pose* :copy-worldcoords) :transform (make-coords :pos #f(0 0 -150))))
@@ -362,6 +365,11 @@
     )
     nil
     )
+  )
+
+(defun put-and-lift (put-target lift-targets)
+  (put-on-box put-target)
+  (lift-box-on-table lift-targets)
   )
 
 (defun put-box (&optional (wait-time 10))
