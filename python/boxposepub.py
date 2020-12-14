@@ -18,6 +18,7 @@ from geometry_msgs.msg import PointStamped
 from geometry_msgs.msg import PoseStamped
 from std_msgs.msg import String
 from std_msgs.msg import Bool
+from carry_objects.srv import *
 
 box_info_fname = rospy.get_param("/boxpose_pub/info_yaml", "../config/box_info.yaml")
 marker_size = rospy.get_param("/ar_track_alvar/marker_size", 5.0) * 0.01 #cm -> m
@@ -115,6 +116,7 @@ class BoxData:
         self.initflag = True
         self.fixed_pos = np.array([0, 0, 0])
         self.fixed_rot = np.identity(3)
+        self.fixed_state = 'world'
         
     def local_to_camera(self, local_pos, local_rot = np.identity(3)):
         tmppos = self.pos + np.dot(self.rot, local_pos)
@@ -424,20 +426,20 @@ def callback(msg):
     d_t = (d_time - c_time).secs + float((d_time - c_time).nsecs) / 1000000000
     e_t = (e_time - d_time).secs + float((e_time - d_time).nsecs) / 1000000000
     all_t = (e_time - start_time).secs + float((e_time - start_time).nsecs) / 1000000000
-    if all_t > 0 :
-        rospy.loginfo(
-            " " + "{:.3f}".format(all_t) + "  "
-            " " + "{:.3f}".format(a_t) + " "
-            " " + "{:.3f}".format(b_t) + " "
-            " " + "{:.3f}".format(c_t) + " "
-            " " + "{:.3f}".format(d_t) + " "
-            " " + "{:.3f}".format(e_t) + "  "
-            " " + "{:.2f}".format(a_t / all_t) + " "
-            " " + "{:.2f}".format(b_t / all_t) + " "
-            " " + "{:.2f}".format(c_t / all_t) + " "
-            " " + "{:.2f}".format(d_t / all_t) + " "
-            " " + "{:.2f}".format(e_t / all_t) + " "
-            )
+    #if all_t > 0 :
+    #    rospy.loginfo(
+    #        " " + "{:.3f}".format(all_t) + "  "
+    #        " " + "{:.3f}".format(a_t) + " "
+    #        " " + "{:.3f}".format(b_t) + " "
+    #        " " + "{:.3f}".format(c_t) + " "
+    #        " " + "{:.3f}".format(d_t) + " "
+    #        " " + "{:.3f}".format(e_t) + "  "
+    #        " " + "{:.2f}".format(a_t / all_t) + " "
+    #        " " + "{:.2f}".format(b_t / all_t) + " "
+    #        " " + "{:.2f}".format(c_t / all_t) + " "
+    #        " " + "{:.2f}".format(d_t / all_t) + " "
+    #        " " + "{:.2f}".format(e_t / all_t) + " "
+    #        )
 
 def mode_cb(msg):
     global look_box_mode
@@ -450,6 +452,21 @@ def read_box_id(msg):
     base_box_id = rospy.get_param("/boxpose_pub/base_box_id", 8)
     hold_box_id = rospy.get_param("/boxpose_pub/hold_box_id", 9)
     put_box_id = rospy.get_param("/boxpose_pub/put_box_id", 8)
+
+def handle_lift_box(req):
+    global top_box_id, base_box_id, hold_box_id, put_box_id
+    print(req)
+    box_list = req.boxes
+    for bid in box_list:
+        if not bid in box_info.keys():
+            return LiftBoxResponse(-1)
+    weight = 0.0
+    for bid in box_list:
+        weight += box_info[bid]['mass']
+    print(weight)
+    return LiftBoxResponse(weight)
+
+s = rospy.Service('lift_box_id', LiftBox, handle_lift_box)
     
 rospy.Subscriber("ar_pose_marker", AlvarMarkers, callback)
 rospy.Subscriber("look_box_mode", String, mode_cb)
