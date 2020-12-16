@@ -134,7 +134,7 @@ class BoxData:
         self.quat = quat
         tmp_pos = world_to_camera_pos + np.dot(world_to_camera_rot, self.pos)
         tmp_rot = np.dot(world_to_camera_rot, self.rot)
-        ft = 0.05
+        ft = 0.01
         if self.initflag:
             ft = 1.0
             self.initflag = False
@@ -203,7 +203,7 @@ def callback(msg):
             marker.type = 1
 
             delay = rospy.Time.now() - m.header.stamp
-            #rospy.loginfo("marker_id: " + str(m.id) + " delay: " + str(delay.secs * 1000 + delay.nsecs / 1000000) + "ms")
+            rospy.loginfo("marker_id: " + str(m.id) + " delay: " + str(delay.secs * 1000 + delay.nsecs / 1000000) + "ms")
 
             b_pos = np.array([m.pose.pose.position.x, m.pose.pose.position.y, m.pose.pose.position.z])
             b_rot = np.dot(quaternion.as_rotation_matrix(np.quaternion(m.pose.pose.orientation.w, m.pose.pose.orientation.x, m.pose.pose.orientation.y, m.pose.pose.orientation.z)), np.array(box_info[marker_to_box_dict[m.id]]['markers'][m.id]['rot']).T)
