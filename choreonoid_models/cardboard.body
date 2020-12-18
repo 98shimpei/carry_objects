@@ -14,7 +14,7 @@ links:
       0,       0,       0.05 ]
     elements:
       Shape:
-        geometry: { type: Box, size: [ 0.48, 0.32, 0.28 ] }
+        geometry: { type: Box, size: [ 0.31, 0.31, 0.31 ] }
         appearance:
           material:
             diffuseColor: [ 1.0, 1.0, 0.0 ]

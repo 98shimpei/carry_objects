@@ -18,6 +18,9 @@
   (send *ri* :stop-auto-balancer)
   (send *ri* :set-auto-balancer-param
              :is-hand-fix-mode nil
+             :hand-fix-fall-gain 0.995
+             :hand-fix-slip-gain 0.995
+             :hand-fix-slip-limit 0.5
              :ik-mode 1)
   ;; (send *ri* :set-auto-balancer-param
   ;;     :use-force-mode :MODE-REF-FORCE-WITH-FOOT
@@ -83,10 +86,6 @@
   (setq msg (instance std_msgs::Bool :init))
   (send msg :data t)
   (ros::publish "update_box_id" msg)
-  (setq msg (instance std_msgs::string :init))
-  (send msg :data (format nil "put-box"))
-  (ros::publish "look_box_mode" msg)
-  (print "change look_box_mode: put-box")
   (unix:sleep 1)
 
   ;;箱のtf取得
@@ -98,14 +97,16 @@
     ;;高さ変更
     (print "高さ変更")
     (setq move-z (+ (elt (scale 0.5 (v+ rdiff ldiff)) 2) 100))
-    (while (> move-z 100) (progn
-      (send *robot* :arms :move-end-pos (float-vector 0 0 100) :world)
+    (if (> move-z 0)
+      (while (> move-z 100) (progn
+        (send *robot* :arms :move-end-pos (float-vector 0 0 100) :world)
+        (send *ri* :angle-vector (send *robot* :angle-vector) 1000)
+        (send *ri* :wait-interpolation)
+        (setq move-z (- move-z 100))))
+      (send *robot* :arms :move-end-pos (float-vector 0 0 move-z) :world)
       (send *ri* :angle-vector (send *robot* :angle-vector) 1000)
       (send *ri* :wait-interpolation)
-      (setq move-z (- move-z 100))))
-    (send *robot* :arms :move-end-pos (float-vector 0 0 move-z) :world)
-    (send *ri* :angle-vector (send *robot* :angle-vector) 1000)
-    (send *ri* :wait-interpolation)
+    )
     
     ;;置く位置へ移動
     (print "置く位置へ移動")
@@ -126,6 +127,10 @@
       (setq theta (* 57.2957795131 (atan2 (elt body-x 1) (elt body-x 0)))) ;;360/(2*pi)　書くのめんどかった
       ))
     (send *ri* :go-stop)
+    (setq msg (instance std_msgs::string :init))
+    (send msg :data (format nil "put-box"))
+    (ros::publish "look_box_mode" msg)
+    (print "change look_box_mode: put-box")
     (unix:sleep 1)
     (update-tf-pose (list "goal_body_pose"))
     (setq body-x (transform (send *goal_body_pose* :worldrot) #f(1 0 0)))
@@ -133,11 +138,30 @@
     (send *ri* :go-pos (* 0.001 (elt (send *goal_body_pose* :worldpos) 0)) (* 0.001 (elt (send *goal_body_pose* :worldpos) 1)) theta)
     (unix:sleep 1)
 
-    ;;箱の状態取得
+    ;;把持高さへ移動
     (update-tf-pose (list "rhand_pose" "lhand_pose" "goal_rhand_pose" "goal_lhand_pose"))
     (setq rdiff (v- (send *goal_rhand_pose* :worldpos) (send *rhand_pose* :worldpos)))
     (setq ldiff (v- (send *goal_lhand_pose* :worldpos) (send *lhand_pose* :worldpos)))
+    (setq hand_ave (scale 0.5 (v+ (send *goal_rhand_pose* :worldpos) (send *goal_lhand_pose* :worldpos))))
+    (setq z_move 0)
+    (if (< (elt hand_ave 2) 1000) (progn
+      (print "かがむ")
+      (setq z_move (- 1000 (elt hand_ave 2)))
+      (send *robot* :legs :move-end-pos (float-vector 0 0 z_move))
+      (send *ri* :angle-vector (send *robot* :angle-vector) 6000)
+      (send *ri* :wait-interpolation)
+      (unix:sleep 1)
+      ))
     ))
+  (setq msg (instance std_msgs::string :init))
+  (send msg :data (format nil "put-box"))
+  (ros::publish "look_box_mode" msg)
+  (print "change look_box_mode: put-box")
+  (unix:sleep 1)
+  ;;箱の状態取得
+  (update-tf-pose (list "rhand_pose" "lhand_pose" "goal_rhand_pose" "goal_lhand_pose"))
+  (setq rdiff (v- (send *goal_rhand_pose* :worldpos) (send *rhand_pose* :worldpos)))
+  (setq ldiff (v- (send *goal_lhand_pose* :worldpos) (send *lhand_pose* :worldpos)))
   ;;置く
   ;; TODO : 回転で正しくない
   (print "置く位置決め")
@@ -189,6 +213,12 @@
   (send *ri* :angle-vector (send *robot* :angle-vector) 3000)
   (send *ri* :wait-interpolation)
   (setq *state* 'put)
+  (send *ri* :stop-box-balancer 1.0)
+  (if (> z_move 0) (print "かがんだ分高さ戻す"))
+  (send *robot* :legs :move-end-pos (float-vector 0 0 (* -1.0 z_move)) :world)
+  (send *ri* :angle-vector (send *robot* :angle-vector) 3000)
+  (send *ri* :wait-interpolation)
+  (send *ri* :stop-box-balancer 0.0)
   )
 
 
@@ -276,7 +306,7 @@
   (unless *impedance_mode* (progn
     (send *ri* :stop-impedance :arms)
     (send *ri* :start-impedance :arms :K-r 100.0 :D-r 100.0 :M-r 1
-                                      :K-p 300.0 :D-p 300.0 :M-p 5)
+                                      :K-p 150.0 :D-p 150.0 :M-p 5)
     (setq *impedance_mode* t)))
   (update-tf-pose (list "rhand_pose" "lhand_pose" "rarm_end_coords" "larm_end_coords"))
   (setq rdiff (v- (send *rhand_pose* :worldpos) (send *rarm_end_coords* :worldpos)))
