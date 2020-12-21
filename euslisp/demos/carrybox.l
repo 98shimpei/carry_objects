@@ -97,7 +97,7 @@
     ;;高さ変更
     (print "高さ変更")
     (setq move-z (+ (elt (scale 0.5 (v+ rdiff ldiff)) 2) 100))
-    (if (> move-z 0)
+    (if (> move-z 0) (progn
       (while (> move-z 100) (progn
         (send *robot* :arms :move-end-pos (float-vector 0 0 100) :world)
         (send *ri* :angle-vector (send *robot* :angle-vector) 1000)
@@ -106,6 +106,7 @@
       (send *robot* :arms :move-end-pos (float-vector 0 0 move-z) :world)
       (send *ri* :angle-vector (send *robot* :angle-vector) 1000)
       (send *ri* :wait-interpolation)
+      )
     )
     
     ;;置く位置へ移動
@@ -389,8 +390,8 @@
       (print "lift-box-simple")
       (lift-box-simple lift-targets 100)
       (print "put-on-box")
-      (put-on-box put-target))
-      (setq align-flag t))
+      (put-on-box put-target)
+      (setq align-flag t)))
     (or (align-boxes lift-targets) align-flag)
     )
     nil
