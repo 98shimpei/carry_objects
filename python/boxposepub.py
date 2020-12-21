@@ -19,6 +19,7 @@ from geometry_msgs.msg import PoseStamped
 from std_msgs.msg import String
 from std_msgs.msg import Bool
 from carry_objects.srv import *
+from carry_objects.msg import *
 
 box_info_fname = rospy.get_param("/boxpose_pub/info_yaml", "../config/box_info.yaml")
 marker_size = rospy.get_param("/ar_track_alvar/marker_size", 5.0) * 0.01 #cm -> m
@@ -41,12 +42,17 @@ rospy.init_node('boxpose_pub')
 box_pose_pub = rospy.Publisher("box_pose", BoxPoses, queue_size = 1)
 markers_pub = rospy.Publisher("markers", MarkerArray, queue_size = 1)
 look_at_point_pub = rospy.Publisher("look_at_point", PointStamped, queue_size = 1)
+box_states_pub = rospy.Publisher("box_states", BoxStates, queue_size = 1)
 
 box_dict = {}
+box_states = BoxStates()
 
 listener = tf.TransformListener()
 world_to_camera_pos = np.array([0, 0, 0])
 world_to_camera_rot = np.identity(3)
+lhand_pos = np.array([0, 0, 0])
+rhand_pos = np.array([0, 0, 0])
+lift_now = False
 
 class LookAtData:
     def __init__(self, bid, blocal):
@@ -116,8 +122,13 @@ class BoxData:
         self.initflag = True
         self.fixed_pos = np.array([0, 0, 0])
         self.fixed_rot = np.identity(3)
-        self.fixed_state = 'world'
-        
+        #-1...world, -2...none(hand, air)
+        self.fixed_id = -1
+        self.on_id = -2
+        self.state_update_flag = False
+        self.myu = 1
+        self.myudash = 1
+
     def local_to_camera(self, local_pos, local_rot = np.identity(3)):
         tmppos = self.pos + np.dot(self.rot, local_pos)
         tmprot = np.dot(self.rot, local_rot)
@@ -128,20 +139,37 @@ class BoxData:
         tmprot = np.dot(self.rot.T, camera_rot)
         return tmppos, tmprot
 
-    def pose_update(self, pos, rot, quat):
-        self.pos = pos
-        self.rot = rot
-        self.quat = quat
-        tmp_pos = world_to_camera_pos + np.dot(world_to_camera_rot, self.pos)
-        tmp_rot = np.dot(world_to_camera_rot, self.rot)
+    def up_to_down_update(self):
+        self.state_update_flag = True
+        tmp_pos = self.pos
+        tmp_rot = self.rot
+        if self.fixed_id == -1: #world
+            tmp_pos = world_to_camera_pos + np.dot(world_to_camera_rot, self.pos)
+            tmp_rot = np.dot(world_to_camera_rot, self.rot)
+        elif self.fixed_id == -2: #none(hand)
+            return
+        else:
+            if self.fixed_id in box_dict:
+                if box_dict[self.fixed_id].probability > 0: #localの更新
+                    tmp_pos, tmp_rot = box_dict[self.fixed_id].camera_to_local(self.pos, self.rot)
+                else: #下の箱のposの更新
+                    if box_dict[self.fixed_id].state_update_flag == False:
+                        box_dict[self.fixed_id].pos, box_dict[self.fixed_id].rot = self.local_to_camera(np.dot(self.fixed_rot.transpose(),-self.fixed_pos), self.fixed_rot.transpose())
+                        box_dict[self.fixed_id].quat = quaternion.from_rotation_matrix(box_dict[self.fixed_id].rot, nonorthogonal=True)
+                        box_dict[self.fixed_id].up_to_down_update()
+                    return
+        #localの更新
         ft = 0.05
         if self.initflag:
             ft = 1.0
             self.initflag = False
+        elif self.fixed_id > 0:
+            ft = 0.2
         self.fixed_pos = (1.0-ft) * self.fixed_pos + ft * tmp_pos
         self.fixed_rot = (1.0-ft) * self.fixed_rot + ft * tmp_rot
-    
+
     def disappear(self):
+        #消えた(probabilityが0以下になった)瞬間の処理
         self.box_marker_data.color.r = 0.0
         self.box_marker_data.color.g = 0.0
         self.box_marker_data.color.b = 1.0
@@ -157,10 +185,132 @@ class BoxData:
         self.box_marker_data.header.frame_id = marker_frame_id.lstrip()
         self.box_marker_data.header.stamp = rospy.Time.now()
 
-    def pose_estimate(self):
-        self.pos = np.dot(world_to_camera_rot.T, (self.fixed_pos - world_to_camera_pos))
-        self.rot = np.dot(world_to_camera_rot.T, self.fixed_rot)
-        self.quat = quaternion.from_rotation_matrix(self.rot)
+    def down_to_up_update(self):
+        if self.fixed_id == -1: #world
+            self.pos = np.dot(world_to_camera_rot.T, (self.fixed_pos - world_to_camera_pos))
+            self.rot = np.dot(world_to_camera_rot.T, self.fixed_rot)
+            self.quat = quaternion.from_rotation_matrix(self.rot, nonorthogonal=True)
+        elif self.fixed_id == -2:
+            rospy.loginfo("motteru noni mitenai")
+        else:
+            if self.fixed_id in box_dict:
+                if box_dict[self.fixed_id].state_update_flag == False:
+                    box_dict[self.fixed_id].down_to_up_update()
+                self.pos, self.rot = box_dict[self.fixed_id].local_to_camera(self.fixed_pos, self.fixed_rot)
+                self.quat = quaternion.from_rotation_matrix(self.rot, nonorthogonal=True)
+        self.state_update_flag = True
+    def check_slip(self, dangerous_safety, safety, modify_safety, on_weight, on_pos, on_calc_weight):
+        global boxstates
+        boxstate = BoxState()
+        hogepos, hogerot = box_dict[hold_box_id].camera_to_local(self.pos, self.rot)
+        hogequat = quaternion.from_rotation_matrix(hogerot, nonorthogonal=True)
+        boxstate.pose.position.x = hogepos[0]
+        boxstate.pose.position.y = hogepos[1]
+        boxstate.pose.position.z = hogepos[2]
+        boxstate.pose.orientation.x = hogequat.x
+        boxstate.pose.orientation.y = hogequat.y
+        boxstate.pose.orientation.z = hogequat.z
+        boxstate.pose.orientation.w = hogequat.w
+        boxstate.size = (np.array(box_info[self.box_pose_data.id]['size']) * 1000).tolist()
+        boxstate.color = 1.0
+        box_states.boxstates.append(boxstate)
+        if self.fixed_id > 0:
+            local_on_pos = self.fixed_pos + np.dot(self.fixed_rot, on_pos)
+            weight = box_info[self.box_pose_data.id]['mass'] + on_weight
+            #cogposはひとつ下の箱座標系
+            cogpos = (self.fixed_pos * box_info[self.box_pose_data.id]['mass'] + local_on_pos * on_weight) / weight
+            tmppos, dummyrot = box_dict[hold_box_id].camera_to_local(self.pos)
+            l1 = tmppos[2]
+            tmppos, dummyrot = box_dict[hold_box_id].camera_to_local(box_dict[self.fixed_id].pos)
+            l2 = tmppos[2]
+            calc_weight = (l1 * l1 * self.myudash * box_info[self.box_pose_data.id]['mass'] + on_calc_weight)
+            #落ちそうなとき。揺すって修正したい
+            #揺すって滑る長さは、持ってる箱(本当はハンド)からの高さ^2と動摩擦係数に比例
+            if abs(cogpos[0]) > box_info[self.fixed_id]['size'][0]*0.5*dangerous_safety or abs(cogpos[1]) > box_info[self.fixed_id]['size'][1]*0.5*dangerous_safety:
+                return np.array([100, 100, 100])
+            elif abs(cogpos[0]) > box_info[self.fixed_id]['size'][0]*0.5*safety:
+                modify_distance = np.array([cogpos[0], cogpos[1], 0]) * (1.0 - (box_info[self.fixed_id]['size'][0]*0.5*modify_safety / abs(cogpos[0]))) * (l1 * l1 * weight / calc_weight) / (l1 * l1 * self.myudash - l2 * l2 * box_dict[self.fixed_id].myudash)
+                print(str(self.box_pose_data.id) + " detect dangerous slip")
+                print(cogpos)
+                print(self.fixed_pos)
+                print(l1)
+                print(modify_distance)
+                print(weight)
+                print(calc_weight)
+                tmp = box_dict[self.fixed_id].check_slip(dangerous_safety, safety, modify_safety, weight, cogpos, calc_weight)
+                if np.linalg.norm(tmp) > np.linalg.norm(modify_distance):
+                    modify_distance = tmp
+                return modify_distance
+            elif abs(cogpos[1]) > box_info[self.fixed_id]['size'][1]*0.5*safety:
+                modify_distance = np.array([cogpos[0], cogpos[1], 0]) * (1.0 - (box_info[self.fixed_id]['size'][1]*0.5*modify_safety / abs(cogpos[1]))) * (l1 * l1 * weight / calc_weight) / (l1 * l1 * self.myudash - l2 * l2 * box_dict[self.fixed_id].myudash)
+                print(str(self.box_pose_data.id) + " detect dangerous slip")
+                print(cogpos)
+                print(self.fixed_pos)
+                print(l1)
+                print(modify_distance)
+                print(weight)
+                print(calc_weight)
+                tmp = box_dict[self.fixed_id].check_slip(dangerous_safety, safety, modify_safety, weight, cogpos, calc_weight)
+                if np.linalg.norm(tmp) > np.linalg.norm(modify_distance):
+                    modify_distance = tmp
+                return modify_distance
+            else:
+                return box_dict[self.fixed_id].check_slip(dangerous_safety, safety, modify_safety, weight, cogpos, calc_weight)
+        else:
+            return np.array([0, 0, 0])
+
+    def check_modified_slip(self, safety, modify_distance, on_weight, on_pos):
+        global boxstates
+        if self.fixed_id > 0:
+            local_on_pos = self.fixed_pos + np.dot(self.fixed_rot, on_pos)
+            weight = box_info[self.box_pose_data.id]['mass'] + on_weight
+            tmppos, dummyrot = box_dict[hold_box_id].camera_to_local(self.pos)
+            l1 = tmppos[2]
+            tmppos, dummyrot = box_dict[hold_box_id].camera_to_local(box_dict[self.fixed_id].pos)
+            l2 = tmppos[2]
+            modified_pos = self.fixed_pos - modify_distance * (l1 * l1 * self.myudash - l2 * l2 * box_dict[self.fixed_id].myudash)
+            cogpos = (modified_pos * box_info[self.box_pose_data.id]['mass'] + local_on_pos * on_weight) / weight
+            modified_pos_for_boxstate = self.fixed_pos - modify_distance * (l1 * l1 * self.myudash)
+            boxstate = BoxState()
+            hogepos, hogerot = box_dict[self.fixed_id].local_to_camera(modified_pos_for_boxstate, self.fixed_rot)
+            hogepos, hogerot = box_dict[hold_box_id].camera_to_local(hogepos, hogerot)
+            hogequat = quaternion.from_rotation_matrix(hogerot, nonorthogonal=True)
+            boxstate.pose.position.x = hogepos[0]
+            boxstate.pose.position.y = hogepos[1]
+            boxstate.pose.position.z = hogepos[2]
+            boxstate.pose.orientation.x = hogequat.x
+            boxstate.pose.orientation.y = hogequat.y
+            boxstate.pose.orientation.z = hogequat.z
+            boxstate.pose.orientation.w = hogequat.w
+            boxstate.size = (np.array(box_info[self.box_pose_data.id]['size']) * 1000).tolist()
+            boxstate.color = 0.0
+            box_states.boxstates.append(boxstate)
+            print(self.box_pose_data.id)
+            print(cogpos)
+            print(l1)
+            print(self.fixed_pos)
+            print(modified_pos)
+            if abs(cogpos[0]) > box_info[self.fixed_id]['size'][0]*0.5*safety or abs(cogpos[1]) > box_info[self.fixed_id]['size'][1]*0.5*safety:
+                print(str(self.box_pose_data.id) + " detect very dangerous slip")
+                box_dict[self.fixed_id].check_modified_slip(safety, modify_distance, weight, cogpos)
+                return True
+            else:
+                return box_dict[self.fixed_id].check_modified_slip(safety, modify_distance, weight, cogpos)
+        else:
+            boxstate = BoxState()
+            hogepos, hogerot = box_dict[hold_box_id].camera_to_local(self.pos, self.rot)
+            hogequat = quaternion.from_rotation_matrix(hogerot, nonorthogonal=True)
+            boxstate.pose.position.x = hogepos[0]
+            boxstate.pose.position.y = hogepos[1]
+            boxstate.pose.position.z = hogepos[2]
+            boxstate.pose.orientation.x = hogequat.x
+            boxstate.pose.orientation.y = hogequat.y
+            boxstate.pose.orientation.z = hogequat.z
+            boxstate.pose.orientation.w = hogequat.w
+            boxstate.size = (np.array(box_info[self.box_pose_data.id]['size']) * 1000).tolist()
+            boxstate.color = 0.0
+            box_states.boxstates.append(boxstate)
+            return False
 
 
 goal_box = BoxData()
@@ -169,15 +319,22 @@ goal_box.probability = 0.0
 cb_count = 0
 
 def callback(msg):
-    global world_to_camera_pos, world_to_camera_rot, cb_count
+    global world_to_camera_pos, world_to_camera_rot, camera_to_hand_pos, camera_to_hand_rot, cb_count, box_states
     start_time = rospy.Time.now()
     try:
         p, q = listener.lookupTransform(world_tf, marker_frame_id, rospy.Time(0))
         world_to_camera_pos = np.array(p)
         world_to_camera_rot = quaternion.as_rotation_matrix(np.quaternion(q[3], q[0], q[1], q[2])) #w,x,y,z
+        p, q = listener.lookupTransform(marker_frame_id, "/larm_end_coords", rospy.Time(0))
+        r, s = listener.lookupTransform(marker_frame_id, "/rarm_end_coords", rospy.Time(0))
+        lhand_pos = np.array(p)
+        rhand_pos = np.array(p)
     except:
         print("tf listen error")
     a_time = rospy.Time.now()
+    #state_update_flagをFalseに
+    for b in box_dict:
+        box_dict[b].state_update_flag = False
     #マーカーについて
     for m in msg.markers:
         if m.id in marker_to_box_dict.keys():
@@ -209,13 +366,20 @@ def callback(msg):
             b_rot = np.dot(quaternion.as_rotation_matrix(np.quaternion(m.pose.pose.orientation.w, m.pose.pose.orientation.x, m.pose.pose.orientation.y, m.pose.pose.orientation.z)), np.array(box_info[marker_to_box_dict[m.id]]['markers'][m.id]['rot']).T)
             b_pos = m_pos + np.dot(b_rot, -np.array(box_info[marker_to_box_dict[m.id]]['markers'][m.id]['pos']))
 
-            if (not marker_to_box_dict[m.id] in box_dict) or box_dict[marker_to_box_dict[m.id]].probability < 0:
+            if not marker_to_box_dict[m.id] in box_dict:
                 box_dict[marker_to_box_dict[m.id]] = BoxData()
+            elif box_dict[marker_to_box_dict[m.id]].probability < 0:
+                box_dict[marker_to_box_dict[m.id]].box_pose_data = BoxPose()
+                box_dict[marker_to_box_dict[m.id]].box_marker_data = Marker()
+                box_dict[marker_to_box_dict[m.id]].markers_data = {}
+                box_dict[marker_to_box_dict[m.id]].state_update_flag = False
             box_dict[marker_to_box_dict[m.id]].box_pose_data.header = m.header
             box_dict[marker_to_box_dict[m.id]].box_marker_data.header = m.header
             box_dict[marker_to_box_dict[m.id]].markers_data[m.id] = MarkerData(marker, b_pos, b_rot)
             box_dict[marker_to_box_dict[m.id]].probability = 1.0
 
+
+    #ここでprobabilityが正しくなる
 
     #箱について
     for b in box_dict:
@@ -231,7 +395,9 @@ def callback(msg):
             rot = rot / probability_sum
             quat = quaternion.from_rotation_matrix(rot, nonorthogonal=True)
 
-            box_dict[b].pose_update(pos, rot, quat)
+            box_dict[b].pos = pos
+            box_dict[b].rot = rot
+            box_dict[b].quat = quat
 
             box_dict[b].box_pose_data.px = pos[0]
             box_dict[b].box_pose_data.py = pos[1]
@@ -255,6 +421,29 @@ def callback(msg):
             box_dict[b].box_marker_data.lifetime = rospy.Duration()
             box_dict[b].box_marker_data.type = 1
             box_dict[b].box_marker_data.action = Marker.ADD
+
+    #local座標の更新
+    for b in box_dict:
+        if len(box_dict[b].markers_data) != 0: #見てる箱のみ
+            box_dict[b].up_to_down_update()
+    for b in box_dict:
+        if box_dict[b].state_update_flag == False:
+            box_dict[b].down_to_up_update()
+
+    #ズレの認識
+    if lift_now:
+        box_states = BoxStates()
+        dangerous_safety = 0.8
+        safety = 0.5
+        modify_safety = 0.2
+        modify_distance = box_dict[top_box_id].check_slip(dangerous_safety, safety, modify_safety, 0, np.array([0, 0, 0]), 0)
+        if np.linalg.norm(modify_distance) > 100:
+            rospy.loginfo("okanakya yabaiwayo!!")
+        elif np.linalg.norm(modify_distance) > 0:
+            rospy.loginfo("yabaiwayo!!")
+            if box_dict[top_box_id].check_modified_slip(safety, modify_distance, 0, np.array([0, 0, 0])):
+                rospy.loginfo("okanakya yabaiwayo!!")
+        box_states_pub.publish(box_states)
 
     #目標の箱について
     if put_box_id in box_dict:
@@ -312,20 +501,17 @@ def callback(msg):
             box_dict[b].probability -= 0.8
         elif box_dict[b].probability > -5:
             box_dict[b].disappear()
-            box_dict[b].pose_estimate()
             box_dict[b].probability = -10
-        else:
-            box_dict[b].pose_estimate()
-        #br = tf.TransformBroadcaster()
-        #br.sendTransform(
-        #    (box_dict[b].pos[0],
-        #     box_dict[b].pos[1],
-        #     box_dict[b].pos[2]),
-        #    (box_dict[b].quat.x,
-        #     box_dict[b].quat.y,
-        #     box_dict[b].quat.z,
-        #     box_dict[b].quat.w),
-        #    rospy.Time.now(), "box"+str(b), marker_frame_id.lstrip())
+        br = tf.TransformBroadcaster()
+        br.sendTransform(
+            (box_dict[b].pos[0],
+             box_dict[b].pos[1],
+             box_dict[b].pos[2]),
+            (box_dict[b].quat.x,
+             box_dict[b].quat.y,
+             box_dict[b].quat.z,
+             box_dict[b].quat.w),
+            rospy.Time.now(), "box"+str(b), marker_frame_id.lstrip())
         box_dict[b].marker_pose_update()
         markers_data.markers.append(box_dict[b].box_marker_data)
 
@@ -454,16 +640,28 @@ def read_box_id(msg):
     put_box_id = rospy.get_param("/boxpose_pub/put_box_id", 8)
 
 def handle_lift_box(req):
-    global top_box_id, base_box_id, hold_box_id, put_box_id
+    global box_dict, lift_now
     print(req)
     box_list = req.boxes
     for bid in box_list:
         if not bid in box_info.keys():
             return LiftBoxResponse(-1)
+    lift_now = True
     weight = 0.0
-    for bid in box_list:
-        weight += box_info[bid]['mass']
-    print(weight)
+    for i in range(len(box_list)):
+        weight += box_info[box_list[i]]['mass']
+        if i == 0:
+            box_dict[box_list[i]].fixed_id = -2
+        else:
+            box_dict[box_list[i]].fixed_id = box_list[i-1]
+        if i == len(box_list) - 1:
+            box_dict[box_list[i]].on_id = -2
+        else:
+            box_dict[box_list[i]].on_id = box_list[i+1]
+        box_dict[box_list[i]].initflag = True
+    print("weight : " + str(weight))
+    for b in box_dict:
+        print(str(b) + " : " + str(box_dict[b].fixed_id))
     return LiftBoxResponse(weight)
 
 s = rospy.Service('lift_box_id', LiftBox, handle_lift_box)

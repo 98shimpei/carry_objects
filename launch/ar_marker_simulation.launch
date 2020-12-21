@@ -9,7 +9,7 @@
 	<arg name="output_frame" default="/left_camera_optical_frame" />
 	<arg name="top_box_id" default="7" />
 	<arg name="base_box_id" default="8" />
-	<arg name="hold_box_id" default="8" />
+	<arg name="hold_box_id" default="9" />
 
 	<node name="ar_track_alvar" pkg="ar_track_alvar" type="individualMarkersNoKinect" respawn="false" output="screen" >
 		<param name="marker_size"           type="double" value="$(arg marker_size)" />
