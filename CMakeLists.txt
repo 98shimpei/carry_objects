@@ -47,6 +47,7 @@ add_message_files(
   FILES
   BoxState.msg
   BoxStates.msg
+  EmergencyCommand.msg
 )
 
 ## Generate services in the 'srv' folder

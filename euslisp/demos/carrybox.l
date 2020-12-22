@@ -6,8 +6,19 @@
 (ros::roseus-add-msgs "geometry_msgs")
 (ros::roseus-add-msgs "std_msgs")
 (ros::roseus-add-srvs "carry_objects")
+(ros::roseus-add-msgs "carry_objects")
 
 (setq *impedance_mode* nil)
+(setq *dummy-spin* nil)
+(setq *return* nil)
+(setq *lift-targets* nil)
+
+(ros::roseus "carrybox_eus")
+(setq *tfl* (instance ros::transform-listener :init))
+(ros::advertise "update_box_id" std_msgs::Bool 1)
+(ros::advertise "look_box_mode" std_msgs::string 1)
+(setq *current-robot* (instance jaxon_red-robot :init))
+(send *current-robot* :fix-leg-to-coords (make-coords))
 
 (defun start (&optional (simulation nil))
   (if simulation (setq *simulation_mode* t) (setq *simulation_mode* nil))
@@ -53,13 +64,6 @@
   (send *ri* :move-gripper :arms 0.3 :wait t)
   )
 
-(ros::roseus "carrybox")
-(setq *tfl* (instance ros::transform-listener :init))
-(ros::advertise "update_box_id" std_msgs::Bool 1)
-(ros::advertise "look_box_mode" std_msgs::string 1)
-(setq *current-robot* (instance jaxon_red-robot :init))
-(send *current-robot* :fix-leg-to-coords (make-coords))
-
 (defun update-tf-pose (frames)
   (send *current-robot* :angle-vector (send *ri* :state :potentio-vector))
   (send *current-robot* :fix-leg-to-coords (make-coords))
@@ -78,7 +82,7 @@
     ))
   )
 
-(defun put-on-box (put-box-id)
+(defun put-on-box (put-box-id &optional (active-modification nil))
   (unless (string= *state* 'lift-box)
     (print "robot not carries box now")
     (return-from put-on-box nil))
@@ -114,6 +118,9 @@
     (update-tf-pose (list "goal_body_pose"))
     (setq body-x (transform (send *goal_body_pose* :worldrot) #f(1 0 0)))
     (setq theta (* 57.2957795131 (atan2 (elt body-x 1) (elt body-x 0)))) ;;360/(2*pi)　書くのめんどかった
+    (setq *dummy-spin* t)
+    (ros::spin-once)
+    (setq *dummy-spin* nil)
     (while (or (> (norm (float-vector (elt (send *goal_body_pose* :worldpos) 0) (elt (send *goal_body_pose* :worldpos) 1))) 100) (> theta 15)) (progn
       (setq vel (float-vector (elt (send *goal_body_pose* :worldpos) 0) (elt (send *goal_body_pose* :worldpos) 1)))
       (setq vel (scale (/ 100.0 (norm vel)) vel))
@@ -122,6 +129,8 @@
       (print vel)
       (print omega)
       (send *ri* :go-velocity (* 0.001 (elt vel 0)) (* 0.001 (elt vel 1)) omega)
+      (if active-modification (ros::spin-once))
+      (if *return* (progn (setq *return* nil) (return-from put-on-box nil)))
       (unix:sleep 1)
       (update-tf-pose (list "goal_body_pose"))
       (setq body-x (transform (send *goal_body_pose* :rot) #f(1 0 0)))
@@ -306,7 +315,7 @@
   (send *ri* :wait-interpolation)
   (unless *impedance_mode* (progn
     (send *ri* :stop-impedance :arms)
-    (send *ri* :start-impedance :arms :K-r 100.0 :D-r 100.0 :M-r 1
+    (send *ri* :start-impedance :arms :K-r 30.0 :D-r 30.0 :M-r 1
                                       :K-p 150.0 :D-p 150.0 :M-p 5)
     (setq *impedance_mode* t)))
   (update-tf-pose (list "rhand_pose" "lhand_pose" "rarm_end_coords" "larm_end_coords"))
@@ -350,6 +359,7 @@
   (send *robot* :legs :move-end-pos (float-vector 0 0 (* -1.0 z_move)) :world)
   (send *ri* :angle-vector (send *robot* :angle-vector) 3000)
   (send *ri* :wait-interpolation)
+  (setq *lift-targets* target-list)
   (setq *state* 'lift-box)
   )
 
@@ -399,7 +409,7 @@
   )
 
 (defun put-and-lift (put-target lift-targets)
-  (put-on-box put-target)
+  (put-on-box put-target t)
   (lift-box-on-table lift-targets)
   )
 
@@ -441,3 +451,21 @@
     (setq *state* 'put)
     (return-from put-box t))
   )
+
+(defun emergency_command_listener (msg)
+  (unless *dummy-spin* (progn
+    (if (= (send msg :mode) 0)
+      (send *ri* :jamp-box (send msg :period) (send msg :amp) (send msg :ampr) (send msg :x) (send msg :y) (send msg :z))
+      (progn
+        (setq old-put-target (ros::get-param "/boxpose_pub/put_box_id"))
+        (send *ri* :go-stop)
+        (unix:sleep 1)
+        (put-and-lift (send msg :put_id) *lift-targets*)
+        (put-on-box old-put-target t)
+        (setq *return* t)
+      )
+    )
+  ))
+)
+
+(ros::subscribe "emergency_command" carry_objects::EmergencyCommand #'emergency_command_listener)
