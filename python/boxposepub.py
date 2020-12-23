@@ -147,8 +147,8 @@ class BoxData:
         return tmppos, tmprot
 
     def change_fixed_id(self, new_id):
-        tmp_pos = self.pos
-        tmp_rot = self.rot
+        tmppos = self.pos
+        tmprot = self.rot
         if self.fixed_id == -1:
             tmppos = np.dot(world_to_camera_rot.T, (self.fixed_pos - world_to_camera_pos))
             tmprot = np.dot(world_to_camera_rot.T, self.fixed_rot)
@@ -157,7 +157,7 @@ class BoxData:
             tmprot = np.dot(world_to_camera_rot.T, self.fixed_rot)
         else:
             if self.fixed_id in box_dict:
-                self.pos, self.rot = box_dict[self.fixed_id].local_to_camera(self.fixed_pos, self.fixed_rot)
+                tmppos, tmprot = box_dict[self.fixed_id].local_to_camera(self.fixed_pos, self.fixed_rot)
         if new_id == -1:
             self.fixed_pos = world_to_camera_pos + np.dot(world_to_camera_rot, tmppos)
             self.fixed_rot = np.dot(world_to_camera_rot, tmprot)
@@ -165,7 +165,7 @@ class BoxData:
             self.fixed_pos = world_to_camera_pos + np.dot(world_to_camera_rot, tmppos)
             self.fixed_rot = np.dot(world_to_camera_rot, tmprot)
         else:
-            if self.fixed_id in box_dict:
+            if new_id in box_dict:
                 self.fixed_pos, self.fixed_rot = box_dict[new_id].camera_to_local(tmppos, tmprot)
         self.fixed_id = new_id
 
@@ -742,9 +742,9 @@ def handle_lift_box(req):
     #box同士の接続
     for i in range(len(box_list)):
         if i == 0:
-            box_dict[b].change_fixed_id(-2)
+            box_dict[box_list[i]].change_fixed_id(-2)
         else:
-            box_dict[b].change_fixed_id(box_list[i-1])
+            box_dict[box_list[i]].change_fixed_id(box_list[i-1])
         if i == len(box_list) - 1:
             box_dict[box_list[i]].on_id = -2
         else:
