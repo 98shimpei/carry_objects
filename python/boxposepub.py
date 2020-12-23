@@ -488,7 +488,7 @@ def callback(msg):
                 msg.mode = 1
                 msg.put_id = 50
                 emergency_command_pub.publish(msg)
-                check_cooltime = 10
+                check_cooltime = 30
         elif np.linalg.norm(modify_distance) > 0:
             rospy.loginfo("yabaiwayo!!")
             if box_dict[top_box_id].check_modified_slip(safety, modify_distance, 0, np.array([0, 0, 0])):
@@ -498,21 +498,21 @@ def callback(msg):
                     msg.mode = 1
                     msg.put_id = 50
                     emergency_command_pub.publish(msg)
-                    check_cooltime = 10
+                    check_cooltime = 30
             else:
                 rospy.loginfo("katamukereba iiwayo!!")
                 if check_cooltime == 0:
                     msg = EmergencyCommand()
                     msg.mode = 0
                     msg.period = 0.3
-                    msg.amp = 0.0
-                    msg.ampr = 0.1
+                    msg.amp = 0.01
+                    msg.ampr = 0.15
                     msg.x = modify_distance[0]
                     msg.y = modify_distance[1]
                     msg.z = modify_distance[2]
                     emergency_command_pub.publish(msg)
-                    check_cooltime = 10
-        else if check_cooltime == 0:
+                    check_cooltime = 30
+        elif check_cooltime == 0:
             msg = EmergencyCommand()
             msg.mode = -1
             emergency_command_pub.publish(msg)
