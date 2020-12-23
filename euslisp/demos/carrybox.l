@@ -409,7 +409,7 @@
   )
 
 (defun put-and-lift (put-target lift-targets)
-  (put-on-box put-target t)
+  (put-on-box put-target nil)
   (lift-box-on-table lift-targets)
   )
 
