@@ -456,6 +456,8 @@
   (unless *dummy-spin* (progn
     (if (= (send msg :mode) 0)
       (send *ri* :jamp-box (send msg :period) (send msg :amp) (send msg :ampr) (send msg :x) (send msg :y) (send msg :z))
+    )
+    (if (= (send msg :mode) 1)
       (progn
         (setq old-put-target (ros::get-param "/boxpose_pub/put_box_id"))
         (send *ri* :go-stop)

@@ -118,7 +118,7 @@ class BoxData:
         self.pos = np.array([0, 0, 0])
         self.rot = np.identity(3)
         self.quat = np.quaternion(1, 0, 0, 0)
-        self.initflag = True
+        self.localinitflag = True
         self.fixed_pos = np.array([0, 0, 0])
         self.fixed_rot = np.identity(3)
         #-1...world, -2...none(hand, air)
@@ -134,6 +134,7 @@ class BoxData:
         self.markers_data = {}
         self.probability = 1.0
         self.state_update_flag = False #cbはじめにFalseになり、pos,rot,quatを更新したらTrueになる
+        self.initflag = True
 
     def local_to_camera(self, local_pos, local_rot = np.identity(3)):
         tmppos = self.pos + np.dot(self.rot, local_pos)
@@ -153,7 +154,8 @@ class BoxData:
             tmp_pos = world_to_camera_pos + np.dot(world_to_camera_rot, self.pos)
             tmp_rot = np.dot(world_to_camera_rot, self.rot)
         elif self.fixed_id == -2: #none(hand)
-            return
+            tmp_pos = world_to_camera_pos + np.dot(world_to_camera_rot, self.pos)
+            tmp_rot = np.dot(world_to_camera_rot, self.rot)
         else:
             if self.fixed_id in box_dict:
                 if box_dict[self.fixed_id].probability > 0: #localの更新
@@ -165,10 +167,10 @@ class BoxData:
                         box_dict[self.fixed_id].up_to_down_update()
                     return
         #localの更新
-        ft = 0.05
-        if self.initflag:
+        ft = 0.01
+        if self.localinitflag:
             ft = 1.0
-            self.initflag = False
+            self.localinitflag = False
         elif self.lift:
             ft = 0.2
         self.fixed_pos = (1.0-ft) * self.fixed_pos + ft * tmp_pos
@@ -197,6 +199,9 @@ class BoxData:
             self.rot = np.dot(world_to_camera_rot.T, self.fixed_rot)
             self.quat = quaternion.from_rotation_matrix(self.rot, nonorthogonal=True)
         elif self.fixed_id == -2:
+            self.pos = np.dot(world_to_camera_rot.T, (self.fixed_pos - world_to_camera_pos))
+            self.rot = np.dot(world_to_camera_rot.T, self.fixed_rot)
+            self.quat = quaternion.from_rotation_matrix(self.rot, nonorthogonal=True)
             rospy.loginfo("motteru noni mitenai")
         else:
             if self.fixed_id in box_dict:
@@ -404,6 +409,13 @@ def callback(msg):
             rot = rot / probability_sum
             quat = quaternion.from_rotation_matrix(rot, nonorthogonal=True)
 
+            if box_dict[b].initflag:
+                box_dict[b].initflag = False
+            elif (np.linalg.norm(box_dict[b].pos - pos) > 0.20):
+                pos = box_dict[b].pos
+                rot = box_dict[b].rot
+                quat = box_dict[b].quat
+                print("pos jamping")
             box_dict[b].pos = pos
             box_dict[b].rot = rot
             box_dict[b].quat = quat
@@ -470,13 +482,19 @@ def callback(msg):
                     msg = EmergencyCommand()
                     msg.mode = 0
                     msg.period = 0.3
-                    msg.amp = 0.01
-                    msg.ampr = 0.05
+                    msg.amp = 0.0
+                    msg.ampr = 0.1
                     msg.x = modify_distance[0]
                     msg.y = modify_distance[1]
                     msg.z = modify_distance[2]
                     emergency_command_pub.publish(msg)
                     check_cooltime = 10
+        else if check_cooltime == 0:
+            msg = EmergencyCommand()
+            msg.mode = -1
+            emergency_command_pub.publish(msg)
+
+
         box_states_pub.publish(box_states)
     if check_cooltime > 0:
         check_cooltime -= 1
@@ -693,12 +711,12 @@ def handle_lift_box(req):
         #持ち上げた箱
         if b in box_list:
             weight += box_info[b]['mass']
-            box_dict[b].initflag = True
+            box_dict[b].localinitflag = True
             box_dict[b].lift = True
         #持ち上げてない箱
         else:
             box_dict[b].fixed_id = -1
-            box_dict[b].initflag = True
+            box_dict[b].localinitflag = True
             box_dict[b].lift = False
     #box同士の接続
     for i in range(len(box_list)):
