@@ -158,7 +158,7 @@
       (print "かがむ")
       (setq z_move (- 1000 (elt hand_ave 2)))
       (send *robot* :legs :move-end-pos (float-vector 0 0 z_move))
-      (send *ri* :angle-vector (send *robot* :angle-vector) 6000)
+      (send *ri* :angle-vector (send *robot* :angle-vector) 9000)
       (send *ri* :wait-interpolation)
       (unix:sleep 1)
       ))
@@ -315,8 +315,8 @@
   (send *ri* :wait-interpolation)
   (unless *impedance_mode* (progn
     (send *ri* :stop-impedance :arms)
-    (send *ri* :start-impedance :arms :K-r 30.0 :D-r 30.0 :M-r 1
-                                      :K-p 150.0 :D-p 150.0 :M-p 5)
+    (send *ri* :start-impedance :arms :K-r 100.0 :D-r 100.0 :M-r 1
+                                      :K-p 300.0 :D-p 300.0 :M-p 5)
     (setq *impedance_mode* t)))
   (update-tf-pose (list "rhand_pose" "lhand_pose" "rarm_end_coords" "larm_end_coords"))
   (setq rdiff (v- (send *rhand_pose* :worldpos) (send *rarm_end_coords* :worldpos)))
