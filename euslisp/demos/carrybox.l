@@ -228,7 +228,7 @@
   (send *robot* :legs :move-end-pos (float-vector 0 0 (* -1.0 z_move)) :world)
   (send *ri* :angle-vector (send *robot* :angle-vector) 3000)
   (send *ri* :wait-interpolation)
-  (send *ri* :stop-box-balancer 0.0)
+  (send *ri* :stop-box-balancer 0.997)
   )
 
 
@@ -357,7 +357,7 @@
   ;;高さ戻す
   (if (> z_move 0) (print "かがんだ分高さ戻す"))
   (send *robot* :legs :move-end-pos (float-vector 0 0 (* -1.0 z_move)) :world)
-  (send *ri* :angle-vector (send *robot* :angle-vector) 3000)
+  (send *ri* :angle-vector (send *robot* :angle-vector) 5000)
   (send *ri* :wait-interpolation)
   (setq *lift-targets* target-list)
   (setq *state* 'lift-box)
@@ -367,7 +367,7 @@
   (while (align-boxes target-list) (print "align-boxes"))
   (print "lift")
   (send *ri* :set-box-balancer)
-  (lift-box-simple target-list 100)
+  (lift-box-simple target-list 130)
   (send *ri* :start-box-balancer nil nil)
   (send *robot* :arms :move-end-pos #f(0 0 100) :world)
   (send *ri* :angle-vector (send *robot* :angle-vector))
@@ -398,7 +398,7 @@
     (if (> hand_ave_diff 200) (progn (print "箱を持つ前に下がっておく") (go-lift-pose) (send *ri* :go-pos -0.2 0 0)))
     (if (> hand_ave_diff 40) (progn
       (print "lift-box-simple")
-      (lift-box-simple lift-targets 100)
+      (lift-box-simple lift-targets 130)
       (print "put-on-box")
       (put-on-box put-target)
       (setq align-flag t)))
