@@ -53,6 +53,8 @@ world_to_camera_pos = np.array([0, 0, 0])
 world_to_camera_rot = np.identity(3)
 lhand_pos = np.array([0, 0, 0])
 rhand_pos = np.array([0, 0, 0])
+lhand_rot = np.array([0, 0, 0])
+rhand_rot = np.array([0, 0, 0])
 lift_now = False
 check_cooltime = 10
 
@@ -268,12 +270,6 @@ class BoxData:
                 #世界座標系に変換
                 modify_distance = np.dot(world_to_camera_rot, np.dot(box_dict[self.fixed_id].rot, modify_distance))
                 print(str(self.box_pose_data.id) + " detect dangerous slip")
-                #print(cogpos)
-                #print(self.fixed_pos)
-                #print(l1)
-                #print(modify_distance)
-                #print(weight)
-                #print(calc_weight)
                 tmp = box_dict[self.fixed_id].check_slip(dangerous_safety, safety, modify_safety, weight, cogpos, calc_weight)
                 if np.linalg.norm(tmp) > np.linalg.norm(modify_distance):
                     modify_distance = tmp
@@ -284,12 +280,6 @@ class BoxData:
                 #世界座標系に変換
                 modify_distance = np.dot(world_to_camera_rot, np.dot(box_dict[self.fixed_id].rot, modify_distance))
                 print(str(self.box_pose_data.id) + " detect dangerous slip")
-                #print(cogpos)
-                #print(self.fixed_pos)
-                #print(l1)
-                #print(modify_distance)
-                #print(weight)
-                #print(calc_weight)
                 tmp = box_dict[self.fixed_id].check_slip(dangerous_safety, safety, modify_safety, weight, cogpos, calc_weight)
                 if np.linalg.norm(tmp) > np.linalg.norm(modify_distance):
                     modify_distance = tmp
@@ -325,11 +315,6 @@ class BoxData:
             boxstate.size = (np.array(box_info[self.box_pose_data.id]['size']) * 1000).tolist()
             boxstate.color = 0.0
             box_states.boxstates.append(boxstate)
-            #print(self.box_pose_data.id)
-            #print(cogpos)
-            #print(l1)
-            #print(self.fixed_pos)
-            #print(modified_pos)
             if abs(cogpos[0]) > box_info[self.fixed_id]['size'][0]*0.5*safety or abs(cogpos[1]) > box_info[self.fixed_id]['size'][1]*0.5*safety:
                 print(str(self.box_pose_data.id) + " detect very dangerous slip")
                 box_dict[self.fixed_id].check_modified_slip(safety, modify_distance, weight, cogpos)
@@ -369,6 +354,8 @@ def callback(msg):
         r, s = listener.lookupTransform(marker_frame_id, "/rarm_end_coords", rospy.Time(0))
         lhand_pos = np.array(p)
         rhand_pos = np.array(p)
+        lhand_rot = quaternion.as_rotation_matrix(np.quaternion(q[3], q[0], q[1], q[2])) #w,x,y,z
+        rhand_rot = quaternion.as_rotation_matrix(np.quaternion(s[3], s[0], s[1], s[2])) #w,x,y,z
     except:
         print("tf listen error")
     a_time = rospy.Time.now()
@@ -477,9 +464,9 @@ def callback(msg):
     #ズレの認識
     if lift_now:
         box_states = BoxStates()
-        dangerous_safety = 0.8
-        safety = 0.5
-        modify_safety = 0.2
+        dangerous_safety = 0.6
+        safety = 0.3
+        modify_safety = 0.1
         modify_distance = box_dict[top_box_id].check_slip(dangerous_safety, safety, modify_safety, 0, np.array([0, 0, 0]), 0)
         if np.linalg.norm(modify_distance) > 100:
             rospy.loginfo("okanakya yabaiwayo!!")
