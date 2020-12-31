@@ -263,7 +263,7 @@ class BoxData:
         boxstate.pose.orientation.z = hogequat.z
         boxstate.pose.orientation.w = hogequat.w
         boxstate.size = (np.array(box_info[self.id]['size']) * 1000).tolist()
-        boxstate.color = 1.0
+        boxstate.color = [1.0, 1.0, 1.0, 0.5]
         box_states.boxstates.append(boxstate)
         if self.fixed_id > 0:
             local_on_pos = self.fixed_pos + np.dot(self.fixed_rot, on_pos)
@@ -278,6 +278,7 @@ class BoxData:
             #落ちそうなとき。揺すって修正したい
             #揺すって滑る長さは、持ってる箱(本当はハンド)からの高さ^2と動摩擦係数に比例
             if abs(cogpos[0]) > box_info[self.fixed_id]['size'][0]*0.5*dangerous_safety or abs(cogpos[1]) > box_info[self.fixed_id]['size'][1]*0.5*dangerous_safety:
+                boxstate.color = [1.0, 0.5, 0.5, 0.5]
                 return np.array([100, 100, 100])
             elif abs(cogpos[0]) > box_info[self.fixed_id]['size'][0]*0.5*safety:
                 #下の箱座標系
@@ -328,10 +329,11 @@ class BoxData:
             boxstate.pose.orientation.z = hogequat.z
             boxstate.pose.orientation.w = hogequat.w
             boxstate.size = (np.array(box_info[self.id]['size']) * 1000).tolist()
-            boxstate.color = 0.0
+            boxstate.color = [0.5, 1.0, 0.5, 0.5]
             box_states.boxstates.append(boxstate)
             if abs(cogpos[0]) > box_info[self.fixed_id]['size'][0]*0.5*safety or abs(cogpos[1]) > box_info[self.fixed_id]['size'][1]*0.5*safety:
                 print(str(self.id) + " detect very dangerous slip")
+                boxstate.color = [1.0, 0.5, 0.5, 0.5]
                 box_dict[self.fixed_id].check_modified_slip(safety, modify_distance, weight, cogpos)
                 return True
             else:
@@ -348,7 +350,7 @@ class BoxData:
             boxstate.pose.orientation.z = hogequat.z
             boxstate.pose.orientation.w = hogequat.w
             boxstate.size = (np.array(box_info[self.id]['size']) * 1000).tolist()
-            boxstate.color = 0.0
+            boxstate.color = [0.5, 1.0, 0.5, 0.5]
             box_states.boxstates.append(boxstate)
             return False
 
@@ -586,6 +588,9 @@ def callback(msg):
         #     box_dict[b].quat.z,
         #     box_dict[b].quat.w),
         #    rospy.Time.now(), "box"+str(b), marker_frame_id.lstrip())
+        if box_look_flag:
+            box_poses_data.existence = True
+            box_poses_data.poses.append(box_dict[b].box_pose_data)
         box_dict[b].marker_pose_update()
         markers_data.markers.append(box_dict[b].box_marker_data)
 
