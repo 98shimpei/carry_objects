@@ -57,6 +57,8 @@ lhand_rot = np.array([0, 0, 0])
 rhand_rot = np.array([0, 0, 0])
 lift_now = False
 check_cooltime = 10
+box_look_flag = False
+look_timer = 100
 
 class LookAtData:
     def __init__(self, bid, blocal):
@@ -219,6 +221,7 @@ class BoxData:
         self.box_marker_data.header.stamp = rospy.Time.now()
 
     def down_to_up_update(self):
+        global box_look_flag
         if self.fixed_id == -1: #world
             self.pos = np.dot(world_to_camera_rot.T, (self.fixed_pos - world_to_camera_pos))
             self.rot = np.dot(world_to_camera_rot.T, self.fixed_rot)
@@ -228,6 +231,7 @@ class BoxData:
             self.rot = np.dot(world_to_camera_rot.T, self.fixed_rot)
             self.quat = quaternion.from_rotation_matrix(self.rot, nonorthogonal=True)
             rospy.loginfo("motteru noni mitenai")
+            box_look_flag = False
         else:
             if self.fixed_id in box_dict:
                 if box_dict[self.fixed_id].state_update_flag == False:
@@ -344,7 +348,7 @@ goal_box.probability = 0.0
 cb_count = 0
 
 def callback(msg):
-    global world_to_camera_pos, world_to_camera_rot, camera_to_hand_pos, camera_to_hand_rot, cb_count, box_states, check_cooltime
+    global world_to_camera_pos, world_to_camera_rot, camera_to_hand_pos, camera_to_hand_rot, cb_count, box_states, check_cooltime, box_look_flag, look_timer
     start_time = rospy.Time.now()
     try:
         p, q = listener.lookupTransform(world_tf, marker_frame_id, rospy.Time(0))
@@ -362,6 +366,8 @@ def callback(msg):
     #state_update_flagをFalseに
     for b in box_dict:
         box_dict[b].state_update_flag = False
+    box_look_flag = True
+
     #マーカーについて
     for m in msg.markers:
         if m.id in marker_to_box_dict.keys():
@@ -559,9 +565,7 @@ def callback(msg):
             box_dict[b].markers_data.pop(m)
         #箱
         if box_dict[b].probability > 0:
-            box_poses_data.existence = True
             box_poses_data.header.stamp = box_dict[b].box_pose_data.header.stamp
-            box_poses_data.poses.append(box_dict[b].box_pose_data)
             box_dict[b].probability -= 0.8
         elif box_dict[b].probability > -5:
             box_dict[b].disappear()
@@ -576,6 +580,9 @@ def callback(msg):
         #     box_dict[b].quat.z,
         #     box_dict[b].quat.w),
         #    rospy.Time.now(), "box"+str(b), marker_frame_id.lstrip())
+        if box_look_flag:
+            box_poses_data.existence = True
+            box_poses_data.poses.append(box_dict[b].box_pose_data)
         box_dict[b].marker_pose_update()
         markers_data.markers.append(box_dict[b].box_marker_data)
 
@@ -617,15 +624,29 @@ def callback(msg):
             bid = top_box_id
             blocal = np.array([-box_info[top_box_id]['size'][0]/2.0, 0, -box_info[top_box_id]['size'][2]/2.0])
     elif look_box_mode == "box-balancer":
-        if base_box_id in box_dict:
-            bid = base_box_id
-            blocal = np.array([-box_info[base_box_id]['size'][0]/2.0, 0, box_info[base_box_id]['size'][2]/2.0])
-        elif top_box_id in box_dict:
-            bid = top_box_id
-            blocal = np.array([-box_info[top_box_id]['size'][0]/2.0, 0, -box_info[top_box_id]['size'][2]/2.0])
-        elif hold_box_id in box_dict:
-            bid = hold_box_id
-            blocal = np.array([-box_info[hold_box_id]['size'][0]/2.0, 0, box_info[hold_box_id]['size'][2]/2.0])
+        look_timer -= 1
+        if look_timer > 30: #上の箱見る
+            if base_box_id in box_dict:
+                bid = base_box_id
+                blocal = np.array([-box_info[base_box_id]['size'][0]/2.0, 0, box_info[base_box_id]['size'][2]/2.0])
+            elif top_box_id in box_dict:
+                bid = top_box_id
+                blocal = np.array([-box_info[top_box_id]['size'][0]/2.0, 0, -box_info[top_box_id]['size'][2]/2.0])
+            elif hold_box_id in box_dict:
+                bid = hold_box_id
+                blocal = np.array([-box_info[hold_box_id]['size'][0]/2.0, 0, box_info[hold_box_id]['size'][2]/2.0])
+        else: #下の箱見る
+            if hold_box_id in box_dict:
+                bid = hold_box_id
+                blocal = np.array([-box_info[hold_box_id]['size'][0]/2.0, 0, 0])
+            elif base_box_id in box_dict:
+                bid = base_box_id
+                blocal = np.array([-box_info[base_box_id]['size'][0]/2.0, 0, -box_info[base_box_id]['size'][2]/2.0])
+            elif top_box_id in box_dict:
+                bid = top_box_id
+                blocal = np.array([-box_info[top_box_id]['size'][0]/2.0, 0, -box_info[top_box_id]['size'][2]/2.0])
+            if look_timer <= 0:
+                look_timer = 100
     elif look_box_mode == "put-box":
         if put_box_id in box_dict:
             bid = put_box_id
@@ -692,8 +713,10 @@ def callback(msg):
     #        )
 
 def mode_cb(msg):
-    global look_box_mode
+    global look_box_mode, look_timer
     look_box_mode = msg.data
+    if look_box_mode == 'box-balancer':
+        look_timer = 100
     print(look_box_mode)
 
 def read_box_id(msg):
