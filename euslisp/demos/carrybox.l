@@ -27,12 +27,6 @@
   ;; (send *ri* :angle-vector (send *robot* :reset-pose))
   (send *ri* :stop-st)
   (send *ri* :stop-auto-balancer)
-  (send *ri* :set-auto-balancer-param
-             :is-hand-fix-mode nil
-             :hand-fix-fall-gain 0.995
-             :hand-fix-slip-gain 0.995
-             :hand-fix-slip-limit 0.5
-             :ik-mode 1)
   ;; (send *ri* :set-auto-balancer-param
   ;;     :use-force-mode :MODE-REF-FORCE-WITH-FOOT
   ;;     :additional-force-applied-link-name "RARM_JOINT7"
@@ -40,8 +34,8 @@
   ;;     )
   (send *ri* :set-ref-forces
       (list
-       (float-vector 0 0 (* (send *robot* :weight) 4.9)) 
-       (float-vector 0 0 (* (send *robot* :weight) 4.9)) 
+       (float-vector 0 0 (* (send *robot* :weight) 0.0049)) 
+       (float-vector 0 0 (* (send *robot* :weight) 0.0049)) 
        (float-vector 0 0 0) ;;rarm -260  mg/2
        (float-vector 0 0 0) ;;larm -285
        )
@@ -52,6 +46,13 @@
     ))
   (send *ri* :start-auto-balancer :limbs '(:rarm :larm :rleg :lleg))
   (if simulation (start-footguided-modification nil) (start-footguided-modification t))
+  (send *ri* :set-auto-balancer-param
+             :is-hand-fix-mode nil
+             :hand-fix-fall-gain 0.995
+             :hand-fix-slip-gain 0.995
+             :hand-fix-slip-limit 0.5
+             :hand-fix-body-gain (list 0.001 0.001 0.0003)
+             :ik-mode 1)
   (if (not simulation) (let ()
     (print "press key to start-st")
     (read-line)
@@ -207,8 +208,8 @@
   (print "力を弱める")
   (send *ri* :set-ref-forces
         (list
-         (float-vector 0 0 (* (send *robot* :weight) 4.9))
-         (float-vector 0 0 (* (send *robot* :weight) 4.9))
+         (float-vector 0 0 (* (send *robot* :weight) 0.0049))
+         (float-vector 0 0 (* (send *robot* :weight) 0.0049))
          (float-vector 0 0 0) ;;rarm -260  mg/2
          (float-vector 0 0 0) ;;larm -285
          )
@@ -228,7 +229,7 @@
   (send *robot* :legs :move-end-pos (float-vector 0 0 (* -1.0 z_move)) :world)
   (send *ri* :angle-vector (send *robot* :angle-vector) 3000)
   (send *ri* :wait-interpolation)
-  (send *ri* :stop-box-balancer 0.0)
+  (send *ri* :stop-box-balancer 0.997)
   )
 
 
@@ -335,8 +336,8 @@
   (print box_weight)
   (send *ri* :set-ref-forces
       (list
-       (float-vector 0 0 (* (+ (send *robot* :weight) box_weight) 4.9)) 
-       (float-vector 0 0 (* (+ (send *robot* :weight) box_weight) 4.9)) 
+       (float-vector 0 0 (* (+ (* (send *robot* :weight) 0.001) box_weight) 4.9)) 
+       (float-vector 0 0 (* (+ (* (send *robot* :weight) 0.001) box_weight) 4.9)) 
        (float-vector 0 (* -1 nip_force) (* -1.0 (* box_weight 4.9))) ;;rarm -260  mg/2
        (float-vector 0 (*  1 nip_force) (* -1.0 (* box_weight 4.9))) ;;larm -285
        )
@@ -357,7 +358,7 @@
   ;;高さ戻す
   (if (> z_move 0) (print "かがんだ分高さ戻す"))
   (send *robot* :legs :move-end-pos (float-vector 0 0 (* -1.0 z_move)) :world)
-  (send *ri* :angle-vector (send *robot* :angle-vector) 3000)
+  (send *ri* :angle-vector (send *robot* :angle-vector) 5000)
   (send *ri* :wait-interpolation)
   (setq *lift-targets* target-list)
   (setq *state* 'lift-box)
@@ -367,7 +368,7 @@
   (while (align-boxes target-list) (print "align-boxes"))
   (print "lift")
   (send *ri* :set-box-balancer)
-  (lift-box-simple target-list 100)
+  (lift-box-simple target-list 130)
   (send *ri* :start-box-balancer nil nil)
   (send *robot* :arms :move-end-pos #f(0 0 100) :world)
   (send *ri* :angle-vector (send *robot* :angle-vector))
@@ -398,7 +399,7 @@
     (if (> hand_ave_diff 200) (progn (print "箱を持つ前に下がっておく") (go-lift-pose) (send *ri* :go-pos -0.2 0 0)))
     (if (> hand_ave_diff 40) (progn
       (print "lift-box-simple")
-      (lift-box-simple lift-targets 100)
+      (lift-box-simple lift-targets 130)
       (print "put-on-box")
       (put-on-box put-target)
       (setq align-flag t)))
