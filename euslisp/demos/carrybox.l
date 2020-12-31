@@ -27,12 +27,6 @@
   ;; (send *ri* :angle-vector (send *robot* :reset-pose))
   (send *ri* :stop-st)
   (send *ri* :stop-auto-balancer)
-  (send *ri* :set-auto-balancer-param
-             :is-hand-fix-mode nil
-             :hand-fix-fall-gain 0.995
-             :hand-fix-slip-gain 0.995
-             :hand-fix-slip-limit 0.5
-             :ik-mode 1)
   ;; (send *ri* :set-auto-balancer-param
   ;;     :use-force-mode :MODE-REF-FORCE-WITH-FOOT
   ;;     :additional-force-applied-link-name "RARM_JOINT7"
@@ -40,8 +34,8 @@
   ;;     )
   (send *ri* :set-ref-forces
       (list
-       (float-vector 0 0 (* (send *robot* :weight) 4.9)) 
-       (float-vector 0 0 (* (send *robot* :weight) 4.9)) 
+       (float-vector 0 0 (* (send *robot* :weight) 0.0049)) 
+       (float-vector 0 0 (* (send *robot* :weight) 0.0049)) 
        (float-vector 0 0 0) ;;rarm -260  mg/2
        (float-vector 0 0 0) ;;larm -285
        )
@@ -52,6 +46,13 @@
     ))
   (send *ri* :start-auto-balancer :limbs '(:rarm :larm :rleg :lleg))
   (if simulation (start-footguided-modification nil) (start-footguided-modification t))
+  (send *ri* :set-auto-balancer-param
+             :is-hand-fix-mode nil
+             :hand-fix-fall-gain 0.995
+             :hand-fix-slip-gain 0.995
+             :hand-fix-slip-limit 0.5
+             :hand-fix-body-gain (list 0.001 0.001 0.0003)
+             :ik-mode 1)
   (if (not simulation) (let ()
     (print "press key to start-st")
     (read-line)
@@ -207,8 +208,8 @@
   (print "力を弱める")
   (send *ri* :set-ref-forces
         (list
-         (float-vector 0 0 (* (send *robot* :weight) 4.9))
-         (float-vector 0 0 (* (send *robot* :weight) 4.9))
+         (float-vector 0 0 (* (send *robot* :weight) 0.0049))
+         (float-vector 0 0 (* (send *robot* :weight) 0.0049))
          (float-vector 0 0 0) ;;rarm -260  mg/2
          (float-vector 0 0 0) ;;larm -285
          )
@@ -335,8 +336,8 @@
   (print box_weight)
   (send *ri* :set-ref-forces
       (list
-       (float-vector 0 0 (* (+ (send *robot* :weight) box_weight) 4.9)) 
-       (float-vector 0 0 (* (+ (send *robot* :weight) box_weight) 4.9)) 
+       (float-vector 0 0 (* (+ (* (send *robot* :weight) 0.001) box_weight) 4.9)) 
+       (float-vector 0 0 (* (+ (* (send *robot* :weight) 0.001) box_weight) 4.9)) 
        (float-vector 0 (* -1 nip_force) (* -1.0 (* box_weight 4.9))) ;;rarm -260  mg/2
        (float-vector 0 (*  1 nip_force) (* -1.0 (* box_weight 4.9))) ;;larm -285
        )
