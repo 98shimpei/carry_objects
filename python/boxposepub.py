@@ -575,8 +575,6 @@ def callback(msg):
             box_dict[b].disappear()
             box_dict[b].probability = -10
         if box_look_flag:
-            box_dict[b].box_pose_data_update()
-            box_poses_data.existence = True
             box_poses_data.poses.append(box_dict[b].box_pose_data)
         #br = tf.TransformBroadcaster()
         #br.sendTransform(
@@ -589,6 +587,7 @@ def callback(msg):
         #     box_dict[b].quat.w),
         #    rospy.Time.now(), "box"+str(b), marker_frame_id.lstrip())
         if box_look_flag:
+            box_dict[b].box_pose_data_update()
             box_poses_data.existence = True
             box_poses_data.poses.append(box_dict[b].box_pose_data)
         box_dict[b].marker_pose_update()
@@ -633,7 +632,7 @@ def callback(msg):
             blocal = np.array([-box_info[top_box_id]['size'][0]/2.0, 0, -box_info[top_box_id]['size'][2]/2.0])
     elif look_box_mode == "box-balancer":
         look_timer -= 1
-        if look_timer > 100: #上の箱見る
+        if look_timer > 50: #上の箱見る
             if base_box_id in box_dict:
                 bid = base_box_id
                 blocal = np.array([-box_info[base_box_id]['size'][0]/2.0, 0, box_info[base_box_id]['size'][2]/2.0])
@@ -654,7 +653,7 @@ def callback(msg):
                 bid = top_box_id
                 blocal = np.array([-box_info[top_box_id]['size'][0]/2.0, 0, -box_info[top_box_id]['size'][2]/2.0])
             if look_timer <= 0:
-                look_timer = 300
+                look_timer = 400
     elif look_box_mode == "put-box":
         if put_box_id in box_dict:
             bid = put_box_id
