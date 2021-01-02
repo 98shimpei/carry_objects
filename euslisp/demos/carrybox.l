@@ -367,7 +367,7 @@
 (defun lift-box-on-table (target-list)
   (while (align-boxes target-list) (print "align-boxes"))
   (print "lift")
-  (send *ri* :set-box-balancer)
+  (send *ri* :set-box-balancer (ros::get-param "/boxpose_pub/top_box_id") (ros::get-param"/boxpose_pub/base_box_id"))
   (lift-box-simple target-list 130)
   (send *ri* :start-box-balancer nil nil)
   (send *robot* :arms :move-end-pos #f(0 0 100) :world)

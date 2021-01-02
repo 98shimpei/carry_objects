@@ -6,6 +6,9 @@
 	args="-o $(arg bagfile)
 	      -b 0
 	      /box_pose
+        /box_states
+        /markers
+        /emergency_command
 	      /look_at_point
         /ar_pose_marker
         /rs_l515/color/camera_info
@@ -13,5 +16,5 @@
 	      /tf
 	      /tf_static"
 	output="screen">
-  </node>
+</node>
 </launch>
