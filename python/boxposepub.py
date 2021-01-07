@@ -416,10 +416,13 @@ def callback(msg):
                 box_dict[marker_to_box_dict[m.id]] = BoxData(marker_to_box_dict[m.id])
             elif box_dict[marker_to_box_dict[m.id]].probability < 0:
                 box_dict[marker_to_box_dict[m.id]].redetect_init()
-            box_dict[marker_to_box_dict[m.id]].box_pose_data.header = m.header
-            box_dict[marker_to_box_dict[m.id]].box_marker_data.header = m.header
-            box_dict[marker_to_box_dict[m.id]].markers_data[m.id] = MarkerData(marker, b_pos, b_rot)
-            box_dict[marker_to_box_dict[m.id]].probability = 1.0
+            if (m.id in box_dict[marker_to_box_dict[m.id]].markers_data) and np.linalg.norm(box_dict[marker_to_box_dict[m.id]].pos) - np.linalg.norm(b_pos) > 0.15:
+                print("marker jamping id: " + str(m.id))
+            else:
+                box_dict[marker_to_box_dict[m.id]].box_pose_data.header = m.header
+                box_dict[marker_to_box_dict[m.id]].box_marker_data.header = m.header
+                box_dict[marker_to_box_dict[m.id]].markers_data[m.id] = MarkerData(marker, b_pos, b_rot)
+                box_dict[marker_to_box_dict[m.id]].probability = 1.0
 
 
     #ここでprobabilityが正しくなる
@@ -440,7 +443,7 @@ def callback(msg):
 
             if box_dict[b].initflag:
                 box_dict[b].initflag = False
-            elif (np.linalg.norm(box_dict[b].pos - pos) > 0.50):
+            elif np.linalg.norm(box_dict[b].pos) - np.linalg.norm(pos) > 0.20:
                 pos = box_dict[b].pos
                 rot = box_dict[b].rot
                 quat = box_dict[b].quat
@@ -605,12 +608,12 @@ def callback(msg):
         #     goal_box.quat.z,
         #     goal_box.quat.w),
         #    rospy.Time.now(), "goal_box", marker_frame_id.lstrip())
-        markers_data.markers.append(goal_box.box_marker_data)
+        #markers_data.markers.append(goal_box.box_marker_data)
         goal_box.probability -= 0.3
     elif goal_box.probability > -5:
         goal_box.box_marker_data.action = Marker.DELETE
         goal_box.probability = -10
-        markers_data.markers.append(goal_box.box_marker_data)
+        #markers_data.markers.append(goal_box.box_marker_data)
 
     markers_pub.publish(markers_data)
     box_pose_pub.publish(box_poses_data)
