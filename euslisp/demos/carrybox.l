@@ -48,10 +48,10 @@
   (if simulation (start-footguided-modification nil) (start-footguided-modification t))
   (send *ri* :set-auto-balancer-param
              :is-hand-fix-mode nil
-             :hand-fix-fall-gain 0.995
-             :hand-fix-slip-gain 0.995
-             :hand-fix-slip-limit 0.5
-             :hand-fix-body-gain (list 0.001 0.001 0.0003)
+             :hand-fix-fall-gain 0.995 ;;995
+             :hand-fix-slip-gain 0.995 ;;995
+             :hand-fix-slip-limit 0.5 ;;5
+             :hand-fix-body-gain (list 0.001 0.001 0.0003) ;;(list 0.001 0.001 0.0003)
              :ik-mode 1)
   (if (not simulation) (let ()
     (print "press key to start-st")
