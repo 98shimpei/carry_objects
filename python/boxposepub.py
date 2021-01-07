@@ -58,7 +58,7 @@ rhand_rot = np.array([0, 0, 0])
 lift_now = False
 check_cooltime = 10
 box_look_flag = False
-look_timer = 100
+look_timer = 300
 
 class LookAtData:
     def __init__(self, bid, blocal):
@@ -68,7 +68,7 @@ class LookAtData:
         self.old_local_pos = blocal
         self.new_local_pos = blocal
         self.look_at_pos = np.array([0, 0, 0])
-        self.transition_rate = 0.03
+        self.transition_rate = 0.015
     def new_target(self, bid, blocal):
         if bid < 0:
             self.id = bid
@@ -117,7 +117,7 @@ class MarkerData:
         self.probability = 1.0
 
 class BoxData:
-    def __init__(self):
+    def __init__(self, bid):
         self.redetect_init()
         self.pos = np.array([0, 0, 0])
         self.rot = np.identity(3)
@@ -131,6 +131,7 @@ class BoxData:
         self.myu = 1
         self.myudash = 1
         self.lift = False
+        self.id = bid
 
     def redetect_init(self):
         self.box_pose_data = BoxPose()
@@ -209,6 +210,16 @@ class BoxData:
         self.box_marker_data.color.g = 0.0
         self.box_marker_data.color.b = 1.0
 
+    def box_pose_data_update(self):
+        self.box_pose_data.px = self.pos[0]
+        self.box_pose_data.py = self.pos[1]
+        self.box_pose_data.pz = self.pos[2]
+        self.box_pose_data.rx = self.quat.x
+        self.box_pose_data.ry = self.quat.y
+        self.box_pose_data.rz = self.quat.z
+        self.box_pose_data.rw = self.quat.w
+        self.box_pose_data.id = self.id
+
     def marker_pose_update(self):
         self.box_marker_data.pose.position.x = self.pos[0]
         self.box_marker_data.pose.position.y = self.pos[1]
@@ -251,19 +262,19 @@ class BoxData:
         boxstate.pose.orientation.y = hogequat.y
         boxstate.pose.orientation.z = hogequat.z
         boxstate.pose.orientation.w = hogequat.w
-        boxstate.size = (np.array(box_info[self.box_pose_data.id]['size']) * 1000).tolist()
+        boxstate.size = (np.array(box_info[self.id]['size']) * 1000).tolist()
         boxstate.color = [1.0, 1.0, 1.0, 0.5]
         box_states.boxstates.append(boxstate)
         if self.fixed_id > 0:
             local_on_pos = self.fixed_pos + np.dot(self.fixed_rot, on_pos)
-            weight = box_info[self.box_pose_data.id]['mass'] + on_weight
+            weight = box_info[self.id]['mass'] + on_weight
             #cogposはひとつ下の箱座標系
-            cogpos = (self.fixed_pos * box_info[self.box_pose_data.id]['mass'] + local_on_pos * on_weight) / weight
+            cogpos = (self.fixed_pos * box_info[self.id]['mass'] + local_on_pos * on_weight) / weight
             tmppos, dummyrot = box_dict[hold_box_id].camera_to_local(self.pos)
             l1 = tmppos[2]
             tmppos, dummyrot = box_dict[hold_box_id].camera_to_local(box_dict[self.fixed_id].pos)
             l2 = tmppos[2]
-            calc_weight = (l1 * l1 * self.myudash * box_info[self.box_pose_data.id]['mass'] + on_calc_weight)
+            calc_weight = (l1 * l1 * self.myudash * box_info[self.id]['mass'] + on_calc_weight)
             #落ちそうなとき。揺すって修正したい
             #揺すって滑る長さは、持ってる箱(本当はハンド)からの高さ^2と動摩擦係数に比例
             if abs(cogpos[0]) > box_info[self.fixed_id]['size'][0]*0.5*dangerous_safety or abs(cogpos[1]) > box_info[self.fixed_id]['size'][1]*0.5*dangerous_safety:
@@ -274,7 +285,7 @@ class BoxData:
                 modify_distance = np.array([cogpos[0], cogpos[1], 0]) * (1.0 - (box_info[self.fixed_id]['size'][0]*0.5*modify_safety / abs(cogpos[0]))) * (l1 * l1 * weight / calc_weight) / (l1 * l1 * self.myudash - l2 * l2 * box_dict[self.fixed_id].myudash)
                 #世界座標系に変換
                 modify_distance = np.dot(world_to_camera_rot, np.dot(box_dict[self.fixed_id].rot, modify_distance))
-                print(str(self.box_pose_data.id) + " detect dangerous slip")
+                print(str(self.id) + " detect dangerous slip")
                 tmp = box_dict[self.fixed_id].check_slip(dangerous_safety, safety, modify_safety, weight, cogpos, calc_weight)
                 if np.linalg.norm(tmp) > np.linalg.norm(modify_distance):
                     modify_distance = tmp
@@ -284,7 +295,7 @@ class BoxData:
                 modify_distance = np.array([cogpos[0], cogpos[1], 0]) * (1.0 - (box_info[self.fixed_id]['size'][1]*0.5*modify_safety / abs(cogpos[1]))) * (l1 * l1 * weight / calc_weight) / (l1 * l1 * self.myudash - l2 * l2 * box_dict[self.fixed_id].myudash)
                 #世界座標系に変換
                 modify_distance = np.dot(world_to_camera_rot, np.dot(box_dict[self.fixed_id].rot, modify_distance))
-                print(str(self.box_pose_data.id) + " detect dangerous slip")
+                print(str(self.id) + " detect dangerous slip")
                 tmp = box_dict[self.fixed_id].check_slip(dangerous_safety, safety, modify_safety, weight, cogpos, calc_weight)
                 if np.linalg.norm(tmp) > np.linalg.norm(modify_distance):
                     modify_distance = tmp
@@ -298,13 +309,13 @@ class BoxData:
         global boxstates
         if self.fixed_id > 0:
             local_on_pos = self.fixed_pos + np.dot(self.fixed_rot, on_pos)
-            weight = box_info[self.box_pose_data.id]['mass'] + on_weight
+            weight = box_info[self.id]['mass'] + on_weight
             tmppos, dummyrot = box_dict[hold_box_id].camera_to_local(self.pos)
             l1 = tmppos[2]
             tmppos, dummyrot = box_dict[hold_box_id].camera_to_local(box_dict[self.fixed_id].pos)
             l2 = tmppos[2]
             modified_pos = self.fixed_pos - np.dot(box_dict[self.fixed_id].rot.T, np.dot(world_to_camera_rot.T, modify_distance)) * (l1 * l1 * self.myudash - l2 * l2 * box_dict[self.fixed_id].myudash)
-            cogpos = (modified_pos * box_info[self.box_pose_data.id]['mass'] + local_on_pos * on_weight) / weight
+            cogpos = (modified_pos * box_info[self.id]['mass'] + local_on_pos * on_weight) / weight
             modified_pos_for_boxstate = self.fixed_pos - np.dot(box_dict[self.fixed_id].rot.T, np.dot(world_to_camera_rot.T, modify_distance)) * (l1 * l1 * self.myudash)
             boxstate = BoxState()
             hogepos, hogerot = box_dict[self.fixed_id].local_to_camera(modified_pos_for_boxstate, self.fixed_rot)
@@ -317,11 +328,11 @@ class BoxData:
             boxstate.pose.orientation.y = hogequat.y
             boxstate.pose.orientation.z = hogequat.z
             boxstate.pose.orientation.w = hogequat.w
-            boxstate.size = (np.array(box_info[self.box_pose_data.id]['size']) * 1000).tolist()
+            boxstate.size = (np.array(box_info[self.id]['size']) * 1000).tolist()
             boxstate.color = [0.5, 1.0, 0.5, 0.5]
             box_states.boxstates.append(boxstate)
             if abs(cogpos[0]) > box_info[self.fixed_id]['size'][0]*0.5*safety or abs(cogpos[1]) > box_info[self.fixed_id]['size'][1]*0.5*safety:
-                print(str(self.box_pose_data.id) + " detect very dangerous slip")
+                print(str(self.id) + " detect very dangerous slip")
                 boxstate.color = [1.0, 0.5, 0.5, 0.5]
                 box_dict[self.fixed_id].check_modified_slip(safety, modify_distance, weight, cogpos)
                 return True
@@ -338,13 +349,13 @@ class BoxData:
             boxstate.pose.orientation.y = hogequat.y
             boxstate.pose.orientation.z = hogequat.z
             boxstate.pose.orientation.w = hogequat.w
-            boxstate.size = (np.array(box_info[self.box_pose_data.id]['size']) * 1000).tolist()
+            boxstate.size = (np.array(box_info[self.id]['size']) * 1000).tolist()
             boxstate.color = [0.5, 1.0, 0.5, 0.5]
             box_states.boxstates.append(boxstate)
             return False
 
 
-goal_box = BoxData()
+goal_box = BoxData(0)
 goal_box.probability = 0.0
 
 cb_count = 0
@@ -402,13 +413,16 @@ def callback(msg):
             b_pos = m_pos + np.dot(b_rot, -np.array(box_info[marker_to_box_dict[m.id]]['markers'][m.id]['pos']))
 
             if not marker_to_box_dict[m.id] in box_dict:
-                box_dict[marker_to_box_dict[m.id]] = BoxData()
+                box_dict[marker_to_box_dict[m.id]] = BoxData(marker_to_box_dict[m.id])
             elif box_dict[marker_to_box_dict[m.id]].probability < 0:
                 box_dict[marker_to_box_dict[m.id]].redetect_init()
-            box_dict[marker_to_box_dict[m.id]].box_pose_data.header = m.header
-            box_dict[marker_to_box_dict[m.id]].box_marker_data.header = m.header
-            box_dict[marker_to_box_dict[m.id]].markers_data[m.id] = MarkerData(marker, b_pos, b_rot)
-            box_dict[marker_to_box_dict[m.id]].probability = 1.0
+            if (m.id in box_dict[marker_to_box_dict[m.id]].markers_data) and np.linalg.norm(box_dict[marker_to_box_dict[m.id]].pos) - np.linalg.norm(b_pos) > 0.15:
+                print("marker jamping id: " + str(m.id))
+            else:
+                box_dict[marker_to_box_dict[m.id]].box_pose_data.header = m.header
+                box_dict[marker_to_box_dict[m.id]].box_marker_data.header = m.header
+                box_dict[marker_to_box_dict[m.id]].markers_data[m.id] = MarkerData(marker, b_pos, b_rot)
+                box_dict[marker_to_box_dict[m.id]].probability = 1.0
 
 
     #ここでprobabilityが正しくなる
@@ -429,7 +443,7 @@ def callback(msg):
 
             if box_dict[b].initflag:
                 box_dict[b].initflag = False
-            elif (np.linalg.norm(box_dict[b].pos - pos) > 0.20):
+            elif np.linalg.norm(box_dict[b].pos) - np.linalg.norm(pos) > 0.20:
                 pos = box_dict[b].pos
                 rot = box_dict[b].rot
                 quat = box_dict[b].quat
@@ -437,15 +451,6 @@ def callback(msg):
             box_dict[b].pos = pos
             box_dict[b].rot = rot
             box_dict[b].quat = quat
-
-            box_dict[b].box_pose_data.px = pos[0]
-            box_dict[b].box_pose_data.py = pos[1]
-            box_dict[b].box_pose_data.pz = pos[2]
-            box_dict[b].box_pose_data.rx = quat.x
-            box_dict[b].box_pose_data.ry = quat.y
-            box_dict[b].box_pose_data.rz = quat.z
-            box_dict[b].box_pose_data.rw = quat.w
-            box_dict[b].box_pose_data.id = b
 
 
             box_dict[b].box_marker_data.ns = "box"
@@ -572,6 +577,8 @@ def callback(msg):
         elif box_dict[b].probability > -5:
             box_dict[b].disappear()
             box_dict[b].probability = -10
+        if box_look_flag:
+            box_poses_data.poses.append(box_dict[b].box_pose_data)
         #br = tf.TransformBroadcaster()
         #br.sendTransform(
         #    (box_dict[b].pos[0],
@@ -583,6 +590,7 @@ def callback(msg):
         #     box_dict[b].quat.w),
         #    rospy.Time.now(), "box"+str(b), marker_frame_id.lstrip())
         if box_look_flag:
+            box_dict[b].box_pose_data_update()
             box_poses_data.existence = True
             box_poses_data.poses.append(box_dict[b].box_pose_data)
         box_dict[b].marker_pose_update()
@@ -600,12 +608,12 @@ def callback(msg):
         #     goal_box.quat.z,
         #     goal_box.quat.w),
         #    rospy.Time.now(), "goal_box", marker_frame_id.lstrip())
-        markers_data.markers.append(goal_box.box_marker_data)
+        #markers_data.markers.append(goal_box.box_marker_data)
         goal_box.probability -= 0.3
     elif goal_box.probability > -5:
         goal_box.box_marker_data.action = Marker.DELETE
         goal_box.probability = -10
-        markers_data.markers.append(goal_box.box_marker_data)
+        #markers_data.markers.append(goal_box.box_marker_data)
 
     markers_pub.publish(markers_data)
     box_pose_pub.publish(box_poses_data)
@@ -627,7 +635,7 @@ def callback(msg):
             blocal = np.array([-box_info[top_box_id]['size'][0]/2.0, 0, -box_info[top_box_id]['size'][2]/2.0])
     elif look_box_mode == "box-balancer":
         look_timer -= 1
-        if look_timer > 30: #上の箱見る
+        if look_timer > 50: #上の箱見る
             if base_box_id in box_dict:
                 bid = base_box_id
                 blocal = np.array([-box_info[base_box_id]['size'][0]/2.0, 0, box_info[base_box_id]['size'][2]/2.0])
@@ -648,7 +656,7 @@ def callback(msg):
                 bid = top_box_id
                 blocal = np.array([-box_info[top_box_id]['size'][0]/2.0, 0, -box_info[top_box_id]['size'][2]/2.0])
             if look_timer <= 0:
-                look_timer = 100
+                look_timer = 400
     elif look_box_mode == "put-box":
         if put_box_id in box_dict:
             bid = put_box_id
@@ -718,7 +726,7 @@ def mode_cb(msg):
     global look_box_mode, look_timer
     look_box_mode = msg.data
     if look_box_mode == 'box-balancer':
-        look_timer = 100
+        look_timer = 300
     print(look_box_mode)
 
 def read_box_id(msg):
