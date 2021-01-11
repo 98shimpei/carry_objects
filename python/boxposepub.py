@@ -420,15 +420,19 @@ def callback(msg):
             #    print(box_dict[marker_to_box_dict[m.id]].rot)
             #    print(b_rot)
             #    print(np.sum(np.abs(np.dot(box_dict[marker_to_box_dict[m.id]].rot, b_rot.T) - np.identity(3))))
-            if (m.id in box_dict[marker_to_box_dict[m.id]].markers_data) and np.linalg.norm(box_dict[marker_to_box_dict[m.id]].pos) - np.linalg.norm(b_pos) > 0.15:
-                print("marker pos jamping id: " + str(m.id))
-            elif (m.id in box_dict[marker_to_box_dict[m.id]].markers_data) and np.sum(np.abs(np.dot(box_dict[marker_to_box_dict[m.id]].rot, b_rot.T) - np.identity(3))) > 0.30:
-                print("marker rot jamping id: " + str(m.id) + " " + str(np.sum(np.dot(box_dict[marker_to_box_dict[m.id]].rot, b_rot) - np.identity(3))))
+            if m.id in box_dict[marker_to_box_dict[m.id]].markers_data:
+                if np.linalg.norm(box_dict[marker_to_box_dict[m.id]].pos) - np.linalg.norm(b_pos) > 0.15:
+                    print("marker pos jamping id: " + str(m.id))
+                elif np.sum(np.abs(np.dot(box_dict[marker_to_box_dict[m.id]].rot, b_rot.T) - np.identity(3))) > 0.30:
+                    print("marker rot jamping id: " + str(m.id) + " " + str(np.sum(np.dot(box_dict[marker_to_box_dict[m.id]].rot, b_rot) - np.identity(3))))
+                else:
+                    box_dict[marker_to_box_dict[m.id]].box_pose_data.header = m.header
+                    box_dict[marker_to_box_dict[m.id]].box_marker_data.header = m.header
+                    box_dict[marker_to_box_dict[m.id]].markers_data[m.id] = MarkerData(marker, b_pos, b_rot)
+                    box_dict[marker_to_box_dict[m.id]].probability = 1.0
             else:
-                box_dict[marker_to_box_dict[m.id]].box_pose_data.header = m.header
-                box_dict[marker_to_box_dict[m.id]].box_marker_data.header = m.header
                 box_dict[marker_to_box_dict[m.id]].markers_data[m.id] = MarkerData(marker, b_pos, b_rot)
-                box_dict[marker_to_box_dict[m.id]].probability = 1.0
+                box_dict[marker_to_box_dict[m.id]].markers_data[m.id].probability = 0.0
 
 
     #ここでprobabilityが正しくなる
@@ -440,9 +444,13 @@ def callback(msg):
             rot = np.array([[0, 0, 0], [0, 0, 0], [0, 0, 0]])
             probability_sum = 0
             for m in box_dict[b].markers_data:
-                pos = pos + box_dict[b].markers_data[m].probability * box_dict[b].markers_data[m].box_pos_from_marker
-                rot = rot + box_dict[b].markers_data[m].probability * box_dict[b].markers_data[m].box_rot_from_marker
-                probability_sum = probability_sum + box_dict[b].markers_data[m].probability
+                if box_dict[b].markers_data[m].probability > 0:
+                    pos = pos + box_dict[b].markers_data[m].probability * box_dict[b].markers_data[m].box_pos_from_marker
+                    rot = rot + box_dict[b].markers_data[m].probability * box_dict[b].markers_data[m].box_rot_from_marker
+                    probability_sum = probability_sum + box_dict[b].markers_data[m].probability
+            if probability_sum == 0:
+                continue
+
             pos = pos / probability_sum
             rot = rot / probability_sum
             quat = quaternion.from_rotation_matrix(rot, nonorthogonal=True)
@@ -566,7 +574,7 @@ def callback(msg):
         #マーカー
         marker_del_list = []
         for m in box_dict[b].markers_data:
-            if box_dict[b].markers_data[m].probability > 0:
+            if box_dict[b].markers_data[m].probability >= 0:
                 box_dict[b].markers_data[m].marker_data.action = Marker.ADD
                 markers_data.markers.append(box_dict[b].markers_data[m].marker_data)
                 box_dict[b].markers_data[m].probability -= 0.8
