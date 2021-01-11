@@ -195,12 +195,12 @@ class BoxData:
                         box_dict[self.fixed_id].up_to_down_update()
                     return
         #localの更新
-        ft = 0.01
+        ft = 0.1
         if self.localinitflag:
             ft = 1.0
             self.localinitflag = False
         elif self.lift:
-            ft = 0.2
+            ft = 0.3
         self.fixed_pos = (1.0-ft) * self.fixed_pos + ft * tmp_pos
         self.fixed_rot = (1.0-ft) * self.fixed_rot + ft * tmp_rot
 
@@ -416,8 +416,14 @@ def callback(msg):
                 box_dict[marker_to_box_dict[m.id]] = BoxData(marker_to_box_dict[m.id])
             elif box_dict[marker_to_box_dict[m.id]].probability < 0:
                 box_dict[marker_to_box_dict[m.id]].redetect_init()
+            #if (m.id == 23 and m.id in box_dict[marker_to_box_dict[m.id]].markers_data):
+            #    print(box_dict[marker_to_box_dict[m.id]].rot)
+            #    print(b_rot)
+            #    print(np.sum(np.abs(np.dot(box_dict[marker_to_box_dict[m.id]].rot, b_rot.T) - np.identity(3))))
             if (m.id in box_dict[marker_to_box_dict[m.id]].markers_data) and np.linalg.norm(box_dict[marker_to_box_dict[m.id]].pos) - np.linalg.norm(b_pos) > 0.15:
-                print("marker jamping id: " + str(m.id))
+                print("marker pos jamping id: " + str(m.id))
+            elif (m.id in box_dict[marker_to_box_dict[m.id]].markers_data) and np.sum(np.abs(np.dot(box_dict[marker_to_box_dict[m.id]].rot, b_rot.T) - np.identity(3))) > 0.30:
+                print("marker rot jamping id: " + str(m.id) + " " + str(np.sum(np.dot(box_dict[marker_to_box_dict[m.id]].rot, b_rot) - np.identity(3))))
             else:
                 box_dict[marker_to_box_dict[m.id]].box_pose_data.header = m.header
                 box_dict[marker_to_box_dict[m.id]].box_marker_data.header = m.header
