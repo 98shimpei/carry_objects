@@ -48,6 +48,8 @@ emergency_command_pub = rospy.Publisher("emergency_command", EmergencyCommand, q
 box_dict = {}
 box_states = BoxStates()
 
+ignore_marker_dict = {}
+
 listener = tf.TransformListener()
 world_to_camera_pos = np.array([0, 0, 0])
 world_to_camera_rot = np.identity(3)
@@ -384,6 +386,12 @@ def callback(msg):
     #マーカーについて
     for m in msg.markers:
         if m.id in marker_to_box_dict.keys():
+            if not m.id in ignore_marker_dict.keys():
+                ignore_marker_dict[m.id] = 1
+                continue
+            elif ignore_marker_dict[m.id] > 0:
+                ignore_marker_dict[m.id] -= 1
+                continue
             marker = Marker()
             marker.header = m.header
             marker.ns = "marker"
@@ -431,8 +439,10 @@ def callback(msg):
                     box_dict[marker_to_box_dict[m.id]].markers_data[m.id] = MarkerData(marker, b_pos, b_rot)
                     box_dict[marker_to_box_dict[m.id]].probability = 1.0
             else:
+                box_dict[marker_to_box_dict[m.id]].box_pose_data.header = m.header
+                box_dict[marker_to_box_dict[m.id]].box_marker_data.header = m.header
                 box_dict[marker_to_box_dict[m.id]].markers_data[m.id] = MarkerData(marker, b_pos, b_rot)
-                box_dict[marker_to_box_dict[m.id]].markers_data[m.id].probability = 0.0
+                box_dict[marker_to_box_dict[m.id]].probability = 1.0
 
 
     #ここでprobabilityが正しくなる
@@ -580,6 +590,7 @@ def callback(msg):
                 box_dict[b].markers_data[m].probability -= 0.8
             else:
                 box_dict[b].markers_data[m].marker_data.action = Marker.DELETE
+                ignore_marker_dict.pop(m)
                 markers_data.markers.append(box_dict[b].markers_data[m].marker_data)
                 marker_del_list.append(m)
         for m in marker_del_list:
