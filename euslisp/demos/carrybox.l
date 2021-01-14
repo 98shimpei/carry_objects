@@ -453,19 +453,30 @@
     (return-from put-box t))
   )
 
+(setq *okinaoshi-phase* 0)
+
 (defun emergency_command_listener (msg)
   (unless *dummy-spin* (progn
     (if (= (send msg :mode) 0)
       (send *ri* :jamp-box (send msg :period) (send msg :amp) (send msg :ampr) (send msg :x) (send msg :y) (send msg :z))
     )
-    (if (= (send msg :mode) 1)
+
+    (if (and (= (send msg :mode) 1) (= *okinaoshi-phase* 0))
       (progn
         (setq old-put-target (ros::get-param "/boxpose_pub/put_box_id"))
         (send *ri* :go-stop)
         (unix:sleep 1)
-        (put-and-lift (send msg :put_id) *lift-targets*)
+        (setq *okinaoshi-phase* 1)
+        (ros::spin-once)
+        (setq *okinaoshi-phase* 0)
         (put-on-box old-put-target t)
         (setq *return* t)
+      )
+    )
+
+    (if (and (= (send msg :mode) 1) (= *okinaoshi-phase* 1))
+      (progn
+        (put-and-lift (send msg :put_id) *lift-targets*)
       )
     )
   ))

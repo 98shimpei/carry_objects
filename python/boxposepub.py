@@ -30,6 +30,7 @@ base_box_id = rospy.get_param("/boxpose_pub/base_box_id", 8)
 hold_box_id = rospy.get_param("/boxpose_pub/hold_box_id", 9)
 put_box_id = rospy.get_param("/boxpose_pub/put_box_id", 8)
 look_box_mode = "box-balancer"
+okinaoshi_counter = 0
 
 with open(box_info_fname) as yml:
     box_info = yaml.load(yml)
@@ -497,23 +498,16 @@ def callback(msg):
         modify_distance = box_dict[top_box_id].check_slip(dangerous_safety, safety, modify_safety, 0, np.array([0, 0, 0]), 0)
         if np.linalg.norm(modify_distance) > 100:
             rospy.loginfo("okanakya yabaiwayo!!")
-            if check_cooltime == 0:
-                msg = EmergencyCommand()
-                msg.mode = 1
-                msg.put_id = 50
-                emergency_command_pub.publish(msg)
-                check_cooltime = 30
+            if okinaoshi_counter < 0:
+                okinaoshi_counter -= 1
         elif np.linalg.norm(modify_distance) > 0:
             rospy.loginfo("yabaiwayo!!")
             if box_dict[top_box_id].check_modified_slip(safety, modify_distance, 0, np.array([0, 0, 0])):
                 rospy.loginfo("okanakya yabaiwayo!!")
-                if check_cooltime == 0:
-                    msg = EmergencyCommand()
-                    msg.mode = 1
-                    msg.put_id = 50
-                    emergency_command_pub.publish(msg)
-                    check_cooltime = 30
+                if okinaoshi_counter > 0:
+                    okinaoshi_counter -= 1
             else:
+                okinaoshi_counter = 3
                 rospy.loginfo("katamukereba iiwayo!!")
                 if check_cooltime == 0:
                     msg = EmergencyCommand()
@@ -527,14 +521,23 @@ def callback(msg):
                     emergency_command_pub.publish(msg)
                     check_cooltime = 30
         elif check_cooltime == 0:
+            okinaoshi_counter = 3
             msg = EmergencyCommand()
             msg.mode = -1
             emergency_command_pub.publish(msg)
+        else:
+            okinaoshi_counter = 3
 
 
         box_states_pub.publish(box_states)
     if check_cooltime > 0:
         check_cooltime -= 1
+
+    if okinaoshi_counter == 0:
+        msg = EmergencyCommand()
+        msg.mode = 1
+        msg.put_id = 50
+        emergency_command_pub.publish(msg)
 
     #目標の箱について
     if put_box_id in box_dict:
