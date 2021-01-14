@@ -364,7 +364,7 @@ goal_box.probability = 0.0
 cb_count = 0
 
 def callback(msg):
-    global world_to_camera_pos, world_to_camera_rot, camera_to_hand_pos, camera_to_hand_rot, cb_count, box_states, check_cooltime, box_look_flag, look_timer
+    global world_to_camera_pos, world_to_camera_rot, camera_to_hand_pos, camera_to_hand_rot, cb_count, box_states, check_cooltime, box_look_flag, look_timer, okinaoshi_counter
     start_time = rospy.Time.now()
     try:
         p, q = listener.lookupTransform(world_tf, marker_frame_id, rospy.Time(0))
