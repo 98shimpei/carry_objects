@@ -9,7 +9,7 @@
 (ros::roseus-add-msgs "carry_objects")
 
 (setq *impedance_mode* nil)
-(setq *dummy-spin* nil)
+(setq *dummy-spin* t)
 (setq *return* nil)
 (setq *lift-targets* nil)
 
@@ -84,6 +84,7 @@
   )
 
 (defun put-on-box (put-box-id &optional (active-modification nil))
+  (if active-modification (print "active-modification mode"))
   (unless (string= *state* 'lift-box)
     (print "robot not carries box now")
     (return-from put-on-box nil))
@@ -121,8 +122,8 @@
     (setq theta (* 57.2957795131 (atan2 (elt body-x 1) (elt body-x 0)))) ;;360/(2*pi)　書くのめんどかった
     (setq *dummy-spin* t)
     (ros::spin-once)
-    (setq *dummy-spin* nil)
     (while (or (> (norm (float-vector (elt (send *goal_body_pose* :worldpos) 0) (elt (send *goal_body_pose* :worldpos) 1))) 100) (> theta 15)) (progn
+      (setq *dummy-spin* nil)
       (setq vel (float-vector (elt (send *goal_body_pose* :worldpos) 0) (elt (send *goal_body_pose* :worldpos) 1)))
       (setq vel (scale (/ 100.0 (norm vel)) vel))
       (setq omega_abs (min 5.0 (abs (* 0.8 theta)))) ;;360/(2*pi)　書くのめんどかった
@@ -130,13 +131,14 @@
       (print vel)
       (print omega)
       (send *ri* :go-velocity (* 0.001 (elt vel 0)) (* 0.001 (elt vel 1)) omega)
-      (if active-modification (ros::spin-once))
+      (if active-modification (progn (print "check misalignment") (ros::spin-once)))
       (if *return* (progn (setq *return* nil) (return-from put-on-box nil)))
       (unix:sleep 1)
       (update-tf-pose (list "goal_body_pose"))
       (setq body-x (transform (send *goal_body_pose* :rot) #f(1 0 0)))
       (setq theta (* 57.2957795131 (atan2 (elt body-x 1) (elt body-x 0)))) ;;360/(2*pi)　書くのめんどかった
       ))
+    (setq *dummy-spin* t)
     (send *ri* :go-stop)
     (setq msg (instance std_msgs::string :init))
     (send msg :data (format nil "put-box"))
@@ -164,6 +166,7 @@
       (unix:sleep 1)
       ))
     ))
+  (send *ri* :stop-box-balancer 1.0)
   (setq msg (instance std_msgs::string :init))
   (send msg :data (format nil "put-box"))
   (ros::publish "look_box_mode" msg)
@@ -224,12 +227,12 @@
   (send *ri* :angle-vector (send *robot* :angle-vector) 3000)
   (send *ri* :wait-interpolation)
   (setq *state* 'put)
-  (send *ri* :stop-box-balancer 1.0)
   (if (> z_move 0) (print "かがんだ分高さ戻す"))
   (send *robot* :legs :move-end-pos (float-vector 0 0 (* -1.0 z_move)) :world)
   (send *ri* :angle-vector (send *robot* :angle-vector) 3000)
   (send *ri* :wait-interpolation)
-  (send *ri* :stop-box-balancer 0.997)
+  (send *ri* :stop-box-balancer 0.998)
+  (print "stop-box-balancer 0.998")
   )
 
 
@@ -287,7 +290,7 @@
     (setq body-x (transform (send *body_pose* :rot) #f(1 0 0)))
     (setq theta (* 57.2957795131 (atan2 (elt body-x 1) (elt body-x 0)))) ;;360/(2*pi)　書くのめんどかった
     (send *ri* :go-pos (* 0.001 (elt (send *body_pose* :worldpos) 0)) (* 0.001 (elt (send *body_pose* :worldpos) 1)) theta)
-    (unix:sleep 1)
+    (unix:sleep 2)
   ))
 
   ;;把持高さへ移動
@@ -306,8 +309,8 @@
   
   ;;挟む
   (print "挟む")
-  (send *robot* :rarm :inverse-kinematics (send (send *rhand_pose* :copy-worldcoords) :transform (make-coords :pos #f(-150 0 -100))))
-  (send *robot* :larm :inverse-kinematics (send (send *lhand_pose* :copy-worldcoords) :transform (make-coords :pos #f(-150 0 -100))))
+  (send *robot* :rarm :inverse-kinematics (send (send *rhand_pose* :copy-worldcoords) :transform (make-coords :pos #f(-100 0 -100))))
+  (send *robot* :larm :inverse-kinematics (send (send *lhand_pose* :copy-worldcoords) :transform (make-coords :pos #f(-100 0 -100))))
   (send *ri* :angle-vector (send *robot* :angle-vector) 3000)
   (send *ri* :wait-interpolation)
   (send *robot* :rarm :inverse-kinematics (send (send *rhand_pose* :copy-worldcoords) :transform (make-coords :pos #f(0 0 -100))))
@@ -367,6 +370,9 @@
 (defun lift-box-on-table (target-list)
   (while (align-boxes target-list) (print "align-boxes"))
   (print "lift")
+  (ros::set-param "/boxpose_pub/top_box_id" (elt target-list (- (length target-list) 1)))
+  (if (= (length target-list) 1) (ros::set-param "/boxpose_pub/base_box_id" (elt target-list 0)) (ros::set-param "/boxpose_pub/base_box_id" (elt target-list (- (length target-list) 2))))
+  (unix:sleep 1)
   (send *ri* :set-box-balancer (ros::get-param "/boxpose_pub/top_box_id") (ros::get-param"/boxpose_pub/base_box_id"))
   (lift-box-simple target-list 130)
   (send *ri* :start-box-balancer nil nil)
@@ -456,13 +462,19 @@
 (setq *okinaoshi-phase* 0)
 
 (defun emergency_command_listener (msg)
+  (print "emergency_command subscribed")
   (unless *dummy-spin* (progn
+    (print "do active modification")
     (if (= (send msg :mode) 0)
-      (send *ri* :jamp-box (send msg :period) (send msg :amp) (send msg :ampr) (send msg :x) (send msg :y) (send msg :z))
+      (progn
+        (print "shake boxes")
+        (send *ri* :jamp-box (send msg :period) (send msg :amp) (send msg :ampr) (send msg :x) (send msg :y) (send msg :z))
+      )
     )
 
     (if (and (= (send msg :mode) 1) (= *okinaoshi-phase* 0))
       (progn
+        (print "机に置こうかな")
         (setq old-put-target (ros::get-param "/boxpose_pub/put_box_id"))
         (send *ri* :go-stop)
         (unix:sleep 1)
@@ -476,6 +488,7 @@
 
     (if (and (= (send msg :mode) 1) (= *okinaoshi-phase* 1))
       (progn
+        (print "机に置くよ")
         (put-and-lift (send msg :put_id) *lift-targets*)
       )
     )
