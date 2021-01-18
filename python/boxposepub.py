@@ -30,7 +30,7 @@ base_box_id = rospy.get_param("/boxpose_pub/base_box_id", 8)
 hold_box_id = rospy.get_param("/boxpose_pub/hold_box_id", 9)
 put_box_id = rospy.get_param("/boxpose_pub/put_box_id", 8)
 look_box_mode = "box-balancer"
-okinaoshi_counter = 0
+okinaoshi_counter = 3
 
 with open(box_info_fname) as yml:
     box_info = yaml.load(yml)
@@ -508,7 +508,7 @@ def callback(msg):
         modify_distance = box_dict[top_box_id].check_slip(dangerous_safety, safety, modify_safety, 0, np.array([0, 0, 0]), 0)
         if np.linalg.norm(modify_distance) > 100:
             rospy.loginfo("okanakya yabaiwayo!!")
-            if okinaoshi_counter < 0:
+            if okinaoshi_counter > 0:
                 okinaoshi_counter -= 1
         elif np.linalg.norm(modify_distance) > 0:
             rospy.loginfo("yabaiwayo!!")
@@ -543,11 +543,24 @@ def callback(msg):
     if check_cooltime > 0:
         check_cooltime -= 1
 
+    print(okinaoshi_counter)
     if okinaoshi_counter == 0:
+        print("koko")
         msg = EmergencyCommand()
         msg.mode = 1
-        msg.put_id = 50
-        emergency_command_pub.publish(msg)
+        table_distance = -1
+        table_id = 0
+        for b in box_dict:
+            if b >= 50 and (table_distance < 0 or np.linalg.norm(box_dict[b].pos) < table_distance):
+                table_distance = np.linalg.norm(box_dict[b].pos)
+                table_id = b
+        if table_id >= 50:
+            msg.put_id = table_id
+            emergency_command_pub.publish(msg)
+        else:
+            msg.put_id = 50
+            emergency_command_pub.publish(msg)
+            print("no table")
 
     #目標の箱について
     if put_box_id in box_dict:
