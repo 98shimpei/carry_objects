@@ -388,7 +388,7 @@ def callback(msg):
     for m in msg.markers:
         if m.id in marker_to_box_dict.keys():
             if not m.id in ignore_marker_dict.keys():
-                ignore_marker_dict[m.id] = 1
+                ignore_marker_dict[m.id] = 2
                 continue
             elif ignore_marker_dict[m.id] > 0:
                 ignore_marker_dict[m.id] -= 1
@@ -543,9 +543,7 @@ def callback(msg):
     if check_cooltime > 0:
         check_cooltime -= 1
 
-    print(okinaoshi_counter)
     if okinaoshi_counter == 0:
-        print("koko")
         msg = EmergencyCommand()
         msg.mode = 1
         table_distance = -1
