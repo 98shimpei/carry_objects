@@ -62,7 +62,7 @@
   (send *robot* :fix-leg-to-coords (make-coords))
   (setq *state* 'put)
   (print "close hands")
-  (send *ri* :move-gripper :arms 0.3 :wait t)
+  (send *ri* :move-gripper :arms 0.2 :wait t)
   )
 
 (defun update-tf-pose (frames)
@@ -122,11 +122,11 @@
     (setq theta (* 57.2957795131 (atan2 (elt body-x 1) (elt body-x 0)))) ;;360/(2*pi)　書くのめんどかった
     (setq *dummy-spin* t)
     (ros::spin-once)
-    (while (or (> (norm (float-vector (elt (send *goal_body_pose* :worldpos) 0) (elt (send *goal_body_pose* :worldpos) 1))) 100) (> theta 15)) (progn
+    (while (or (> (norm (float-vector (elt (send *goal_body_pose* :worldpos) 0) (elt (send *goal_body_pose* :worldpos) 1))) 50) (> theta 10)) (progn
       (setq *dummy-spin* nil)
       (setq vel (float-vector (elt (send *goal_body_pose* :worldpos) 0) (elt (send *goal_body_pose* :worldpos) 1)))
       (setq vel (scale (/ 100.0 (norm vel)) vel))
-      (setq omega_abs (min 5.0 (abs (* 0.8 theta)))) ;;360/(2*pi)　書くのめんどかった
+      (setq omega_abs (min 4.0 (abs (* 0.8 theta)))) ;;360/(2*pi)　書くのめんどかった
       (setq omega (if (> theta 0) omega_abs (- omega_abs)))
       (print vel)
       (print omega)
@@ -144,6 +144,7 @@
     (send msg :data (format nil "put-box"))
     (ros::publish "look_box_mode" msg)
     (print "change look_box_mode: put-box")
+    (send *ri* :stop-box-balancer 1.0)
     (unix:sleep 1)
     (update-tf-pose (list "goal_body_pose"))
     (setq body-x (transform (send *goal_body_pose* :worldrot) #f(1 0 0)))
@@ -166,7 +167,6 @@
       (unix:sleep 1)
       ))
     ))
-  (send *ri* :stop-box-balancer 1.0)
   (setq msg (instance std_msgs::string :init))
   (send msg :data (format nil "put-box"))
   (ros::publish "look_box_mode" msg)
@@ -270,7 +270,7 @@
   (while (or (> (norm (float-vector (elt (send *pre_body_pose* :worldpos) 0) (elt (send *pre_body_pose* :worldpos) 1))) 100) (> theta 15)) (progn
     (setq vel (float-vector (elt (send *pre_body_pose* :worldpos) 0) (elt (send *pre_body_pose* :worldpos) 1)))
     (setq vel (scale (/ 100.0 (norm vel)) vel))
-    (setq omega_abs (min 5.0 (abs (* 0.8 theta)))) ;;360/(2*pi)　書くのめんどかった
+    (setq omega_abs (min 4.0 (abs (* 0.8 theta)))) ;;360/(2*pi)　書くのめんどかった
     (setq omega (if (> theta 0) omega_abs (- omega_abs)))
     (print vel)
     (print omega)
@@ -375,7 +375,7 @@
   (unix:sleep 1)
   (send *ri* :set-box-balancer (ros::get-param "/boxpose_pub/top_box_id") (ros::get-param"/boxpose_pub/base_box_id"))
   (lift-box-simple target-list 130)
-  (send *ri* :start-box-balancer nil nil)
+  (send *ri* :start-box-balancer nil nil 7 8 2.5 0.0045 0.001 0.4)
   (send *robot* :arms :move-end-pos #f(0 0 100) :world)
   (send *ri* :angle-vector (send *robot* :angle-vector))
   (send *ri* :wait-interpolation)
@@ -468,6 +468,7 @@
     (if (= (send msg :mode) 0)
       (progn
         (print "shake boxes")
+        (format t "shake param: ~A ~A ~A ~A ~A ~A ~%" (send msg :period) (send msg :amp) (send msg :ampr) (send msg :x) (send msg :y) (send msg :z))
         (send *ri* :jamp-box (send msg :period) (send msg :amp) (send msg :ampr) (send msg :x) (send msg :y) (send msg :z))
       )
     )
@@ -477,7 +478,7 @@
         (print "机に置こうかな")
         (setq old-put-target (ros::get-param "/boxpose_pub/put_box_id"))
         (send *ri* :go-stop)
-        (unix:sleep 1)
+        (unix:sleep 3)
         (setq *okinaoshi-phase* 1)
         (ros::spin-once)
         (setq *okinaoshi-phase* 0)
