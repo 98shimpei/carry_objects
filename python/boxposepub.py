@@ -61,7 +61,7 @@ rhand_rot = np.array([0, 0, 0])
 lift_now = False
 check_cooltime = 10
 box_look_flag = False
-look_timer = 250
+look_timer = 200
 
 class LookAtData:
     def __init__(self, bid, blocal):
@@ -503,8 +503,8 @@ def callback(msg):
     if lift_now:
         box_states = BoxStates()
         dangerous_safety = 0.6
-        safety = 0.3
-        modify_safety = 0.1
+        safety = 0.25
+        modify_safety = 0.05
         modify_distance = box_dict[top_box_id].check_slip(dangerous_safety, safety, modify_safety, 0, np.array([0, 0, 0]), 0)
         if np.linalg.norm(modify_distance) > 100:
             rospy.loginfo("okanakya yabaiwayo!!")
@@ -695,7 +695,7 @@ def callback(msg):
                 bid = top_box_id
                 blocal = np.array([-box_info[top_box_id]['size'][0]/2.0, 0, -box_info[top_box_id]['size'][2]/2.0])
             if look_timer <= 0:
-                look_timer = 250
+                look_timer = 200
     elif look_box_mode == "put-box":
         if put_box_id in box_dict:
             bid = put_box_id
@@ -765,7 +765,7 @@ def mode_cb(msg):
     global look_box_mode, look_timer
     look_box_mode = msg.data
     if look_box_mode == 'box-balancer':
-        look_timer = 250
+        look_timer = 200
     print(look_box_mode)
 
 def read_box_id(msg):
