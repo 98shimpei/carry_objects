@@ -62,7 +62,7 @@
   (send *robot* :fix-leg-to-coords (make-coords))
   (setq *state* 'put)
   (print "close hands")
-  (send *ri* :move-gripper :arms 0.2 :wait t)
+  ;; (send *ri* :move-gripper :arms 0.2 :wait t)
   )
 
 (defun update-tf-pose (frames)
@@ -192,7 +192,9 @@
   (setq rdiff (v- (send *goal_rhand_pose* :worldpos) (send *rhand_pose* :worldpos)))
   (setq ldiff (v- (send *goal_lhand_pose* :worldpos) (send *lhand_pose* :worldpos)))
   (setq hand_ave_diff (* 0.5 (+ (norm (float-vector (elt rdiff 0) (elt rdiff 1))) (norm (float-vector (elt ldiff 0) (elt ldiff 1))))))
-  (while (> hand_ave_diff 10) (progn
+  (setq counter 0)
+  (while (and (> hand_ave_diff 10) (< counter 3)) (progn
+    (setq counter (+ counter 1))
     (print hand_ave_diff)
     (send *robot* :rarm :move-end-pos rdiff :world)
     (send *robot* :larm :move-end-pos ldiff :world)
