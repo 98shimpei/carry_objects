@@ -238,7 +238,7 @@
   )
 
 
-(defun lift-box-simple (target-list &optional (nip_force 50))
+(defun lift-box-simple (target-list &optional (nip_force 50) (grip nil))
   (unless (string= *state* 'put)
     (print "robot carries box now")
     (return-from lift-box-simple nil))
@@ -332,12 +332,14 @@
   (send *ri* :angle-vector (send *robot* :angle-vector) 3000)
   (send *ri* :wait-interpolation)
 
+  (if grip (send *ri* :move-gripper :arms 0.5 :wait t))
   ;;力を入れる
   (print "力を入れる")
   (setq req (instance carry_objects::LiftBoxRequest :init))
   (send req :boxes target-list)
   (setq box_weight (send (ros::service-call "lift_box_id" req) :weight))
   (if (< box_weight 0) (setq box_weight (send (send *ri* :get-box-weight) :operation_return)))
+  (if grip (setq box_weight (/ box_weight 2)))
   (print box_weight)
   (send *ri* :set-ref-forces
       (list
@@ -369,21 +371,21 @@
   (setq *state* 'lift-box)
   )
 
-(defun lift-box-on-table (target-list)
-  (while (align-boxes target-list) (print "align-boxes"))
+(defun lift-box-on-table (target-list &optional (nip_force 130) (grip nil))
+  (while (align-boxes target-list nip_force) (print "align-boxes"))
   (print "lift")
   (ros::set-param "/boxpose_pub/top_box_id" (elt target-list (- (length target-list) 1)))
   (if (= (length target-list) 1) (ros::set-param "/boxpose_pub/base_box_id" (elt target-list 0)) (ros::set-param "/boxpose_pub/base_box_id" (elt target-list (- (length target-list) 2))))
   (unix:sleep 1)
   (send *ri* :set-box-balancer (ros::get-param "/boxpose_pub/top_box_id") (ros::get-param"/boxpose_pub/base_box_id"))
-  (lift-box-simple target-list 130)
-  (send *ri* :start-box-balancer nil nil 7 8 2.5 0.0045 0.001 0.4)
+  (lift-box-simple target-list nip_force grip)
+  (send *ri* :start-box-balancer nil grip 7 8 2.5 0.0045 0.001 0.4)
   (send *robot* :arms :move-end-pos #f(0 0 100) :world)
   (send *ri* :angle-vector (send *robot* :angle-vector))
   (send *ri* :wait-interpolation)
   )
 
-(defun align-boxes (target-list)
+(defun align-boxes (target-list &optional (nip_force 130))
   (setq align-flag nil)
   (print target-list)
   (setq put-target (car target-list))
@@ -407,11 +409,11 @@
     (if (> hand_ave_diff 200) (progn (print "箱を持つ前に下がっておく") (go-lift-pose) (send *ri* :go-pos -0.2 0 0)))
     (if (> hand_ave_diff 40) (progn
       (print "lift-box-simple")
-      (lift-box-simple lift-targets 130)
+      (lift-box-simple lift-targets nip_force)
       (print "put-on-box")
       (put-on-box put-target)
       (setq align-flag t)))
-    (or (align-boxes lift-targets) align-flag)
+    (or (align-boxes lift-targets nip_force) align-flag)
     )
     nil
     )
@@ -421,6 +423,23 @@
   (put-on-box put-target nil)
   (lift-box-on-table lift-targets)
   )
+
+(defun graspless-manip ()
+  (send *ri* :stop-impedance :arms)
+  (send *ri* :start-impedance :arms :K-r 100.0 :D-r 100.0 :M-r 1
+                                      :K-p 70.0 :D-p 70.0 :M-p 5)
+  (send *ri* :start-graspless-manip-mode)
+  (send *ri* :go-velocity 0 0 0)
+  (setq stop-flag 0)
+  (while (< stop-flag 5) (progn
+    (if (> 1 (send (send *ri* :get-box-weight) :operation_return)) (setq stop-flag (+ stop-flag 1)) (setq stop-flag 0))
+    (unix:usleep 100000) ;;100ms
+  ))
+  (send *ri* :go-stop)
+  (send *ri* :stop-impedance :arms)
+  (setq *impedance_mode* nil)
+  (send *ri* :move-gripper :arms 0.0 :wait t)
+)
 
 (defun put-box (&optional (wait-time 10))
   (unix:sleep wait-time)
