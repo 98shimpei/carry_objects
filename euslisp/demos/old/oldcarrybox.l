@@ -511,7 +511,7 @@
 (defun lift-box-on-table (target-list)
   (while (align-boxes target-list) (print "align-boxes"))
   (print "lift")
-  (send *ri* :set-box-balancer)
+  ;; (send *ri* :set-box-balancer)
   (lift-box-simple target-list (* 1.5 (length target-list)) 100)
   (send *ri* :start-box-balancer nil nil)
   (send *robot* :arms :move-end-pos #f(0 0 100) :world)

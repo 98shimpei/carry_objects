@@ -63,6 +63,16 @@
   (setq *state* 'put)
   (print "close hands")
   ;; (send *ri* :move-gripper :arms 0.2 :wait t)
+  ;; (unless *impedance_mode* (progn
+  ;;   (send *ri* :stop-impedance :arms)
+  ;;   (send *ri* :start-impedance :arms :K-r 100.0 :D-r 100.0 :M-r 1
+  ;;                                     :K-p 80.0 :D-p 400.0 :M-p 5) ;; 300 300 5
+  ;;   (setq *impedance_mode* t)))
+  (unless *impedance_mode* (progn
+    (send *ri* :stop-impedance :arms)
+    (send *ri* :start-impedance :arms :K-r 100.0 :D-r 100.0 :M-r 1
+                                      :K-p 300.0 :D-p 400.0 :M-p 5) ;; 300 300 5
+    (setq *impedance_mode* t)))
   )
 
 (defun update-tf-pose (frames)
@@ -299,11 +309,11 @@
   (update-tf-pose (list "rhand_pose" "lhand_pose"))
   (setq hand_ave (scale 0.5 (v+ (send *rhand_pose* :worldpos) (send *lhand_pose* :worldpos))))
   (setq z_move 0)
-  (if (< (elt hand_ave 2) 1000) (progn
+  (if (< (elt hand_ave 2) 950) (progn ;; 1000
     (print "かがむ")
-    (setq z_move (- 1000 (elt hand_ave 2)))
+    (setq z_move (- 950 (elt hand_ave 2)))
     (send *robot* :legs :move-end-pos (float-vector 0 0 z_move))
-    (send *ri* :angle-vector (send *robot* :angle-vector) 6000)
+    (send *ri* :angle-vector (send *robot* :angle-vector) 12000)
     (send *ri* :wait-interpolation)
     (unix:sleep 1)
     (update-tf-pose (list "rhand_pose" "lhand_pose"))
@@ -322,7 +332,7 @@
   (unless *impedance_mode* (progn
     (send *ri* :stop-impedance :arms)
     (send *ri* :start-impedance :arms :K-r 100.0 :D-r 100.0 :M-r 1
-                                      :K-p 300.0 :D-p 300.0 :M-p 5)
+                                      :K-p 100.0 :D-p 100.0 :M-p 5) ;; 300 300 5
     (setq *impedance_mode* t)))
   (update-tf-pose (list "rhand_pose" "lhand_pose" "rarm_end_coords" "larm_end_coords"))
   (setq rdiff (v- (send *rhand_pose* :worldpos) (send *rarm_end_coords* :worldpos)))
@@ -332,7 +342,8 @@
   (send *ri* :angle-vector (send *robot* :angle-vector) 3000)
   (send *ri* :wait-interpolation)
 
-  (if grip (send *ri* :move-gripper :arms 0.5 :wait t))
+  (unix:sleep 3)
+  (if grip (send *ri* :move-gripper :arms 0.9 :wait t))
   ;;力を入れる
   (print "力を入れる")
   (setq req (instance carry_objects::LiftBoxRequest :init))
@@ -380,9 +391,11 @@
   (send *ri* :set-box-balancer (ros::get-param "/boxpose_pub/top_box_id") (ros::get-param"/boxpose_pub/base_box_id"))
   (lift-box-simple target-list nip_force grip)
   (send *ri* :start-box-balancer nil grip 7 8 2.5 0.0045 0.001 0.4)
+  (print "start-box-balancer")
   (send *robot* :arms :move-end-pos #f(0 0 100) :world)
   (send *ri* :angle-vector (send *robot* :angle-vector))
   (send *ri* :wait-interpolation)
+  (unix:sleep 3)
   )
 
 (defun align-boxes (target-list &optional (nip_force 130))
@@ -425,20 +438,27 @@
   )
 
 (defun graspless-manip ()
-  (send *ri* :stop-impedance :arms)
-  (send *ri* :start-impedance :arms :K-r 100.0 :D-r 100.0 :M-r 1
-                                      :K-p 70.0 :D-p 70.0 :M-p 5)
+  ;; (unix:sleep 5)
+  ;; (send *ri* :stop-impedance :arms)
+  ;; (unix:sleep 5)
+  ;; (send *ri* :start-impedance :arms :K-r 100.0 :D-r 100.0 :M-r 1
+  ;;                                     :K-p 80.0 :D-p 80.0 :M-p 5)
   (send *ri* :start-graspless-manip-mode)
   (send *ri* :go-velocity 0 0 0)
   (setq stop-flag 0)
   (while (< stop-flag 5) (progn
-    (if (> 1 (send (send *ri* :get-box-weight) :operation_return)) (setq stop-flag (+ stop-flag 1)) (setq stop-flag 0))
+    (if (> 0 (send (send *ri* :get-box-weight) :operation_return)) (progn (setq stop-flag (+ stop-flag 1)) (print "no weight")) (setq stop-flag 0))
+    (update-tf-pose (list "rarm_end_coords" "larm_end_coords"))
+    (if (> 1070 (* 0.5 (elt (v+ (send *rarm_end_coords* :worldpos) (send *larm_end_coords* :worldpos)) 2))) (progn (setq stop-flag (+ stop-flag 1)) (print "owari")) (setq stop-flag 0))
     (unix:usleep 100000) ;;100ms
   ))
   (send *ri* :go-stop)
-  (send *ri* :stop-impedance :arms)
-  (setq *impedance_mode* nil)
+  (unix:sleep 5)
+  (send *ri* :stop-box-balancer 1.0)
+  ;; (send *ri* :stop-impedance :arms)
+  ;; (setq *impedance_mode* nil)
   (send *ri* :move-gripper :arms 0.0 :wait t)
+  (send *ri* :stop-look-at-box)
 )
 
 (defun put-box (&optional (wait-time 10))
