@@ -423,14 +423,19 @@ def callback(msg):
 
             if not marker_to_box_dict[m.id] in box_dict:
                 box_dict[marker_to_box_dict[m.id]] = BoxData(marker_to_box_dict[m.id])
-            elif box_dict[marker_to_box_dict[m.id]].probability < 0:
-                box_dict[marker_to_box_dict[m.id]].redetect_init()
-            #if (m.id == 23 and m.id in box_dict[marker_to_box_dict[m.id]].markers_data):
-            #    print(box_dict[marker_to_box_dict[m.id]].rot)
-            #    print(b_rot)
-            #    print(np.sum(np.abs(np.dot(box_dict[marker_to_box_dict[m.id]].rot, b_rot.T) - np.identity(3))))
-            if m.id in box_dict[marker_to_box_dict[m.id]].markers_data:
-                if np.linalg.norm(box_dict[marker_to_box_dict[m.id]].pos) - np.linalg.norm(b_pos) > 0.15:
+                box_dict[marker_to_box_dict[m.id]].box_pose_data.header = m.header
+                box_dict[marker_to_box_dict[m.id]].box_marker_data.header = m.header
+                box_dict[marker_to_box_dict[m.id]].markers_data[m.id] = MarkerData(marker, b_pos, b_rot)
+                box_dict[marker_to_box_dict[m.id]].probability = 1.0
+            else:
+                if box_dict[marker_to_box_dict[m.id]].probability < 0:
+                    box_dict[marker_to_box_dict[m.id]].redetect_init()
+                #if (m.id == 23 and m.id in box_dict[marker_to_box_dict[m.id]].markers_data):
+                #    print(box_dict[marker_to_box_dict[m.id]].rot)
+                #    print(b_rot)
+                #    print(np.sum(np.abs(np.dot(box_dict[marker_to_box_dict[m.id]].rot, b_rot.T) - np.identity(3))))
+                #if m.id in box_dict[marker_to_box_dict[m.id]].markers_data:
+                if np.linalg.norm(box_dict[marker_to_box_dict[m.id]].pos) - np.linalg.norm(b_pos) > 0.3:
                     print("marker pos jamping id: " + str(m.id))
                 elif np.sum(np.abs(np.dot(box_dict[marker_to_box_dict[m.id]].rot, b_rot.T) - np.identity(3))) > 0.30:
                     print("marker rot jamping id: " + str(m.id) + " " + str(np.sum(np.dot(box_dict[marker_to_box_dict[m.id]].rot, b_rot) - np.identity(3))))
@@ -439,11 +444,11 @@ def callback(msg):
                     box_dict[marker_to_box_dict[m.id]].box_marker_data.header = m.header
                     box_dict[marker_to_box_dict[m.id]].markers_data[m.id] = MarkerData(marker, b_pos, b_rot)
                     box_dict[marker_to_box_dict[m.id]].probability = 1.0
-            else:
-                box_dict[marker_to_box_dict[m.id]].box_pose_data.header = m.header
-                box_dict[marker_to_box_dict[m.id]].box_marker_data.header = m.header
-                box_dict[marker_to_box_dict[m.id]].markers_data[m.id] = MarkerData(marker, b_pos, b_rot)
-                box_dict[marker_to_box_dict[m.id]].probability = 1.0
+                #else:
+                #    box_dict[marker_to_box_dict[m.id]].box_pose_data.header = m.header
+                #    box_dict[marker_to_box_dict[m.id]].box_marker_data.header = m.header
+                #    box_dict[marker_to_box_dict[m.id]].markers_data[m.id] = MarkerData(marker, b_pos, b_rot)
+                #    box_dict[marker_to_box_dict[m.id]].probability = 1.0
 
 
     #ここでprobabilityが正しくなる
@@ -601,7 +606,7 @@ def callback(msg):
             if box_dict[b].markers_data[m].probability >= 0:
                 box_dict[b].markers_data[m].marker_data.action = Marker.ADD
                 markers_data.markers.append(box_dict[b].markers_data[m].marker_data)
-                box_dict[b].markers_data[m].probability -= 0.8
+                box_dict[b].markers_data[m].probability -= 0.4
             else:
                 box_dict[b].markers_data[m].marker_data.action = Marker.DELETE
                 ignore_marker_dict.pop(m)
@@ -612,12 +617,10 @@ def callback(msg):
         #箱
         if box_dict[b].probability > 0:
             box_poses_data.header.stamp = box_dict[b].box_pose_data.header.stamp
-            box_dict[b].probability -= 0.8
+            box_dict[b].probability -= 0.4
         elif box_dict[b].probability > -5:
             box_dict[b].disappear()
             box_dict[b].probability = -10
-        if box_look_flag:
-            box_poses_data.poses.append(box_dict[b].box_pose_data)
         #br = tf.TransformBroadcaster()
         #br.sendTransform(
         #    (box_dict[b].pos[0],
@@ -704,6 +707,10 @@ def callback(msg):
             bid = hold_box_id
             blocal = np.array([-box_info[hold_box_id]['size'][0]/2.0, 0, -box_info[hold_box_id]['size'][2]/2.0])
     
+    #tmp
+    #if 51 in box_dict:
+	#bid = 51
+	#blocal = np.array([-0.2, 0, 0])
     if bid > 0:
         look_at_data.new_target(bid, blocal)
     look_at_data.publish()
