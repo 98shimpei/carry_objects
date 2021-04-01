@@ -48,7 +48,7 @@
   (if simulation (start-footguided-modification nil) (start-footguided-modification t))
   (send *ri* :set-auto-balancer-param
              :is-hand-fix-mode nil
-             :hand-fix-fall-gain 0.995 ;;995
+             :hand-fix-fall-gain 0.3 ;;995 運搬物の重心高さ[m]
              :hand-fix-slip-gain 0.995 ;;995
              :hand-fix-slip-limit 0.5 ;;5
              :hand-fix-body-gain (list 0.001 0.001 0.0003) ;;(list 0.001 0.001 0.0003)
@@ -73,6 +73,7 @@
     (send *ri* :start-impedance :arms :K-r 100.0 :D-r 100.0 :M-r 1
                                       :K-p 300.0 :D-p 400.0 :M-p 5) ;; 300 300 5
     (setq *impedance_mode* t)))
+  (print "start")
   )
 
 (defun update-tf-pose (frames)
@@ -390,7 +391,7 @@
   (unix:sleep 1)
   (send *ri* :set-box-balancer (ros::get-param "/boxpose_pub/top_box_id") (ros::get-param"/boxpose_pub/base_box_id"))
   (lift-box-simple target-list nip_force grip)
-  (send *ri* :start-box-balancer nil grip 7 8 2.5 0.0045 0.001 0.4)
+  (send *ri* :start-box-balancer nil grip 7 8 3.0 0.0045 0.001 0.4)
   (print "start-box-balancer")
   (send *robot* :arms :move-end-pos #f(0 0 100) :world)
   (send *ri* :angle-vector (send *robot* :angle-vector))
