@@ -125,6 +125,7 @@ class BoxData:
         self.pos = np.array([0, 0, 0])
         self.rot = np.identity(3)
         self.quat = np.quaternion(1, 0, 0, 0)
+        self.markers_data = {}
         self.localinitflag = True
         self.fixed_pos = np.array([0, 0, 0])
         self.fixed_rot = np.identity(3)
@@ -139,7 +140,6 @@ class BoxData:
     def redetect_init(self):
         self.box_pose_data = BoxPose()
         self.box_marker_data = Marker()
-        self.markers_data = {}
         self.probability = 1.0
         self.state_update_flag = False #cbはじめにFalseになり、pos,rot,quatを更新したらTrueになる
         self.initflag = True
@@ -435,9 +435,9 @@ def callback(msg):
                 #    print(b_rot)
                 #    print(np.sum(np.abs(np.dot(box_dict[marker_to_box_dict[m.id]].rot, b_rot.T) - np.identity(3))))
                 #if m.id in box_dict[marker_to_box_dict[m.id]].markers_data:
-                if np.linalg.norm(box_dict[marker_to_box_dict[m.id]].pos) - np.linalg.norm(b_pos) > 0.3:
+                if abs(np.linalg.norm(box_dict[marker_to_box_dict[m.id]].pos) - np.linalg.norm(b_pos)) > 0.5:
                     print("marker pos jamping id: " + str(m.id))
-                elif np.sum(np.abs(np.dot(box_dict[marker_to_box_dict[m.id]].rot, b_rot.T) - np.identity(3))) > 0.30:
+                elif np.sum(np.abs(np.dot(box_dict[marker_to_box_dict[m.id]].rot, b_rot.T) - np.identity(3))) > 0.40:
                     print("marker rot jamping id: " + str(m.id) + " " + str(np.sum(np.dot(box_dict[marker_to_box_dict[m.id]].rot, b_rot) - np.identity(3))))
                 else:
                     box_dict[marker_to_box_dict[m.id]].box_pose_data.header = m.header
@@ -676,7 +676,7 @@ def callback(msg):
             bid = top_box_id
             blocal = np.array([-box_info[top_box_id]['size'][0]/2.0, 0, -box_info[top_box_id]['size'][2]/2.0])
     elif look_box_mode == "box-balancer":
-        look_timer -= 1
+        look_timer -= 0
         if look_timer > 40: #上の箱見る
             if base_box_id in box_dict:
                 bid = base_box_id
