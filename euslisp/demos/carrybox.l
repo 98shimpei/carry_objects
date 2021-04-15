@@ -46,9 +46,10 @@
     ))
   (send *ri* :start-auto-balancer :limbs '(:rarm :larm :rleg :lleg))
   (if simulation (start-footguided-modification nil) (start-footguided-modification t))
+  (push-init)
   (send *ri* :set-auto-balancer-param
              :is-hand-fix-mode nil
-             :hand-fix-fall-gain 0.3 ;;995 運搬物の重心高さ[m]
+             :hand-fix-fall-gain 0.2 ;;995 運搬物の重心高さ[m]
              :hand-fix-slip-gain 0.995 ;;995
              :hand-fix-slip-limit 0.5 ;;5
              :hand-fix-body-gain (list 0.001 0.001 0.0003) ;;(list 0.001 0.001 0.0003)
@@ -393,7 +394,7 @@
   (lift-box-simple target-list nip_force grip)
   (send *ri* :start-box-balancer nil grip 7 8 3.0 0.0045 0.001 0.4)
   (print "start-box-balancer")
-  (send *robot* :arms :move-end-pos #f(0 0 100) :world)
+  (send *robot* :arms :move-end-pos #f(0 0 200) :world)
   (send *ri* :angle-vector (send *robot* :angle-vector))
   (send *ri* :wait-interpolation)
   (unix:sleep 3)

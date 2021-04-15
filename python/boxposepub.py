@@ -364,7 +364,7 @@ goal_box.probability = 0.0
 cb_count = 0
 
 def callback(msg):
-    global world_to_camera_pos, world_to_camera_rot, camera_to_hand_pos, camera_to_hand_rot, cb_count, box_states, check_cooltime, box_look_flag, look_timer, okinaoshi_counter
+    global world_to_camera_pos, world_to_camera_rot, camera_to_hand_pos, camera_to_hand_rot, cb_count, box_states, check_cooltime, box_look_flag, look_timer, okinaoshi_counter, looked_time
     start_time = rospy.Time.now()
     try:
         p, q = listener.lookupTransform(world_tf, marker_frame_id, rospy.Time(0))
@@ -414,8 +414,10 @@ def callback(msg):
             marker.lifetime = rospy.Duration()
             marker.type = 1
 
-            delay = rospy.Time.now() - m.header.stamp
-            #rospy.loginfo("marker_id: " + str(m.id) + " delay: " + str(delay.secs * 1000 + delay.nsecs / 1000000) + "ms")
+            looked_time = m.header.stamp
+            #delay_time = rospy.Time.now() - m.header.stamp
+            #delay = delay_time.secs * 1000 + delay_time.nsecs / 1000000
+            #rospy.loginfo("marker_id: " + str(m.id) + " delay: " + str(delay) + "ms")
 
             b_pos = np.array([m.pose.pose.position.x, m.pose.pose.position.y, m.pose.pose.position.z])
             b_rot = np.dot(quaternion.as_rotation_matrix(np.quaternion(m.pose.pose.orientation.w, m.pose.pose.orientation.x, m.pose.pose.orientation.y, m.pose.pose.orientation.z)), np.array(box_info[marker_to_box_dict[m.id]]['markers'][m.id]['rot']).T)
@@ -594,6 +596,7 @@ def callback(msg):
     b_time = rospy.Time.now()
 
     #publish
+
     box_poses_data = BoxPoses()
     box_poses_data.existence = False
     box_poses_data.header.stamp = rospy.Time.now()
@@ -658,6 +661,11 @@ def callback(msg):
         #markers_data.markers.append(goal_box.box_marker_data)
 
     markers_pub.publish(markers_data)
+
+    delay_time = rospy.Time.now() - looked_time
+    delay = delay_time.secs * 1000 + delay_time.nsecs / 1000000
+    rospy.loginfo(" delay: " + str(delay) + "ms")
+    box_poses_data.delay = delay
     box_pose_pub.publish(box_poses_data)
 
     c_time = rospy.Time.now()
@@ -825,4 +833,5 @@ s = rospy.Service('lift_box_id', LiftBox, handle_lift_box)
 rospy.Subscriber("ar_pose_marker", AlvarMarkers, callback)
 rospy.Subscriber("look_box_mode", String, mode_cb)
 rospy.Subscriber("update_box_id", Bool, read_box_id)
+looked_time = rospy.Time.now()
 rospy.spin()

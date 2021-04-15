@@ -51,11 +51,16 @@ def cvtracker(img):
 def callback(msg):
     bridge = CvBridge()
     img = bridge.imgmsg_to_cv2(msg, "bgr8")
+    img = cv2.resize(img, (int(img.shape[1]/2), int(img.shape[0]/2)))
     img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-    cvtracker(img)
-    dummy_image_pub.publish(msg)    
+    #edges = cv2.Canny(img, 50, 80)
 
-rospy.Subscriber("/rs_l515/color/image_rect_color", Image, callback)
+    mysift(img)
+
+    #cv2.imshow('image', edges)
+    #cv2.waitKey(1)
+    #pubmsg = bridge.cv2_to_imgmsg(img, encoding="passthrough")
+    #dummy_image_pub.publish(pubmsg)
+
+rospy.Subscriber("/camera/color/image_rect_color", Image, callback)
 rospy.spin()
-
-
