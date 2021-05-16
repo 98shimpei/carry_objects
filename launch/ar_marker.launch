@@ -31,6 +31,8 @@
         <param name="top_box_id" type="int" value="7" />
         <param name="base_box_id" type="int" value="8" />
         <param name="hold_box_id" type="int" value="9" />
+	<param name="output_frame"          type="string" value="$(arg output_frame)" />
+	<param name="marker_type"          type="string" value="ar" />
     </node>
 
 </launch>
