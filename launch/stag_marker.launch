@@ -10,11 +10,16 @@
 	<arg name="output_frame" default="/rs_l515_color_optical_frame" />
 
 
-  <node name="stag_node" pkg="stag_ros" type="stag_node" output="screen" required="true">
-    <!-- Place the correct yaml file here-->
+  <!-- <node name="stag_node" pkg="stag_ros" type="stag_node" output="screen" required="true">
     <rosparam command="load" file="$(find stag_ros)/cfg/single.yaml"/>
-    <!-- Place the correct bundle file here-->
     <rosparam command="load" file="$(find stag_ros)/cfg/single_config.yaml"/>
+  </node> -->
+
+  <node name="stag_ros_nodelet" pkg="stag_ros" type="stag_nodelet_runnable" output="screen" required="true">
+        <!-- Place the correct yaml file here-->
+        <rosparam command="load" file="$(find stag_ros)/cfg/single.yaml"/>
+        <!-- Place the correct bundle file here-->
+        <rosparam command="load" file="$(find stag_ros)/cfg/single_config.yaml"/>
   </node>
 
   <!-- <node pkg="carry_objects" name="marker_pub" type="arcube.py" /> -->
@@ -25,6 +30,10 @@
     <param name="base_box_id" type="int" value="8" />
     <param name="hold_box_id" type="int" value="9" />
     <param name="output_frame" type="string" value="$(arg output_frame)" />
+    <param name="marker_type" type="string" value="stag" />
+  </node>
+
+  <node pkg="object_tracker" name="object_tracker" type="object_tracker" output="screen" >
     <param name="marker_type" type="string" value="stag" />
   </node>
 
