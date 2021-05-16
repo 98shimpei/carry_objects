@@ -8,10 +8,10 @@ import yaml
 import numpy as np
 import quaternion
 import geometry_msgs.msg
-import turtlesim.srv
 from hrpsys_ros_bridge.msg import BoxPoses
 from hrpsys_ros_bridge.msg import BoxPose
 from ar_track_alvar_msgs.msg import AlvarMarkers
+from stag_ros.msg import STagMarkerArray
 from visualization_msgs.msg import MarkerArray
 from visualization_msgs.msg import Marker
 from geometry_msgs.msg import PointStamped
@@ -22,13 +22,15 @@ from carry_objects.srv import *
 from carry_objects.msg import *
 
 box_info_fname = rospy.get_param("/boxpose_pub/info_yaml", "../config/box_info.yaml")
-marker_size = rospy.get_param("/ar_track_alvar/marker_size", 5.0) * 0.01 #cm -> m
-marker_frame_id = rospy.get_param("/ar_track_alvar/output_frame", "/camera")
+marker_size = rospy.get_param("/ar_track_alvar/marker_size", 15.7) * 0.01 #cm -> m
 world_tf = rospy.get_param("/boxpose_pub/world_tf", "/odom_ground")
 top_box_id = rospy.get_param("/boxpose_pub/top_box_id", 7)
 base_box_id = rospy.get_param("/boxpose_pub/base_box_id", 8)
 hold_box_id = rospy.get_param("/boxpose_pub/hold_box_id", 9)
 put_box_id = rospy.get_param("/boxpose_pub/put_box_id", 8)
+marker_type = rospy.get_param("/boxpose_pub/marker_type", "ar")
+marker_frame_id = rospy.get_param("/boxpose_pub/output_frame", "/camera")
+
 look_box_mode = "box-balancer"
 okinaoshi_counter = 3
 
@@ -62,6 +64,7 @@ lift_now = False
 check_cooltime = 10
 box_look_flag = False
 look_timer = 200
+looked_time = rospy.Time.now()
 
 class LookAtData:
     def __init__(self, bid, blocal):
@@ -385,72 +388,123 @@ def callback(msg):
     box_look_flag = True
 
     #マーカーについて
-    for m in msg.markers:
-        if m.id in marker_to_box_dict.keys():
-            if not m.id in ignore_marker_dict.keys():
-                ignore_marker_dict[m.id] = 2
-                continue
-            elif ignore_marker_dict[m.id] > 0:
-                ignore_marker_dict[m.id] -= 1
-                continue
-            marker = Marker()
-            marker.header = m.header
-            marker.ns = "marker"
-            marker.id = m.id
-            marker.pose = m.pose.pose
-            m_pos = np.array([marker.pose.position.x, marker.pose.position.y, marker.pose.position.z])
-            m_quat = np.quaternion(marker.pose.orientation.w, marker.pose.orientation.x, marker.pose.orientation.y, marker.pose.orientation.z)
-            m_new_pos = m_pos + np.dot(quaternion.as_rotation_matrix(m_quat), np.array([0, 0, marker_size * 0.01]))
-            marker.pose.position.x = m_new_pos[0]
-            marker.pose.position.y = m_new_pos[1]
-            marker.pose.position.z = m_new_pos[2]
-            marker.color.r = 1.0
-            marker.color.g = 0.0
-            marker.color.b = 0.0
-            marker.color.a = 0.5
-            marker.scale.x = marker_size
-            marker.scale.y = marker_size
-            marker.scale.z = marker_size * 0.02
-            marker.lifetime = rospy.Duration()
-            marker.type = 1
+    #TODO: 二重に書いてるのどうにかしようね
+    if marker_type == "ar":
+        for m in msg.markers:
+            if m.id in marker_to_box_dict.keys():
+                if not m.id in ignore_marker_dict.keys():
+                    ignore_marker_dict[m.id] = 2
+                    continue
+                elif ignore_marker_dict[m.id] > 0:
+                    ignore_marker_dict[m.id] -= 1
+                    continue
+                marker = Marker()
+                marker.header = m.header
+                marker.ns = "marker"
+                marker.id = m.id
+                marker.pose = m.pose.pose
+                m_pos = np.array([marker.pose.position.x, marker.pose.position.y, marker.pose.position.z])
+                m_quat = np.quaternion(marker.pose.orientation.w, marker.pose.orientation.x, marker.pose.orientation.y, marker.pose.orientation.z)
+                m_new_pos = m_pos + np.dot(quaternion.as_rotation_matrix(m_quat), np.array([0, 0, marker_size * 0.01]))
+                marker.pose.position.x = m_new_pos[0]
+                marker.pose.position.y = m_new_pos[1]
+                marker.pose.position.z = m_new_pos[2]
+                marker.color.r = 1.0
+                marker.color.g = 0.0
+                marker.color.b = 0.0
+                marker.color.a = 0.5
+                marker.scale.x = marker_size
+                marker.scale.y = marker_size
+                marker.scale.z = marker_size * 0.02
+                marker.lifetime = rospy.Duration()
+                marker.type = 1
 
-            looked_time = m.header.stamp
-            #delay_time = rospy.Time.now() - m.header.stamp
-            #delay = delay_time.secs * 1000 + delay_time.nsecs / 1000000
-            #rospy.loginfo("marker_id: " + str(m.id) + " delay: " + str(delay) + "ms")
+                looked_time = m.header.stamp
+                #delay_time = rospy.Time.now() - m.header.stamp
+                #delay = delay_time.secs * 1000 + delay_time.nsecs / 1000000
+                #rospy.loginfo("marker_id: " + str(m.id) + " delay: " + str(delay) + "ms")
 
-            b_pos = np.array([m.pose.pose.position.x, m.pose.pose.position.y, m.pose.pose.position.z])
-            b_rot = np.dot(quaternion.as_rotation_matrix(np.quaternion(m.pose.pose.orientation.w, m.pose.pose.orientation.x, m.pose.pose.orientation.y, m.pose.pose.orientation.z)), np.array(box_info[marker_to_box_dict[m.id]]['markers'][m.id]['rot']).T)
-            b_pos = m_pos + np.dot(b_rot, -np.array(box_info[marker_to_box_dict[m.id]]['markers'][m.id]['pos']))
+                b_pos = np.array([m.pose.pose.position.x, m.pose.pose.position.y, m.pose.pose.position.z])
+                b_rot = np.dot(quaternion.as_rotation_matrix(np.quaternion(m.pose.pose.orientation.w, m.pose.pose.orientation.x, m.pose.pose.orientation.y, m.pose.pose.orientation.z)), np.array(box_info[marker_to_box_dict[m.id]]['markers'][m.id]['rot']).T)
+                b_pos = m_pos + np.dot(b_rot, -np.array(box_info[marker_to_box_dict[m.id]]['markers'][m.id]['pos']))
 
-            if not marker_to_box_dict[m.id] in box_dict:
-                box_dict[marker_to_box_dict[m.id]] = BoxData(marker_to_box_dict[m.id])
-                box_dict[marker_to_box_dict[m.id]].box_pose_data.header = m.header
-                box_dict[marker_to_box_dict[m.id]].box_marker_data.header = m.header
-                box_dict[marker_to_box_dict[m.id]].markers_data[m.id] = MarkerData(marker, b_pos, b_rot)
-                box_dict[marker_to_box_dict[m.id]].probability = 1.0
-            else:
-                if box_dict[marker_to_box_dict[m.id]].probability < 0:
-                    box_dict[marker_to_box_dict[m.id]].redetect_init()
-                #if (m.id == 23 and m.id in box_dict[marker_to_box_dict[m.id]].markers_data):
-                #    print(box_dict[marker_to_box_dict[m.id]].rot)
-                #    print(b_rot)
-                #    print(np.sum(np.abs(np.dot(box_dict[marker_to_box_dict[m.id]].rot, b_rot.T) - np.identity(3))))
-                #if m.id in box_dict[marker_to_box_dict[m.id]].markers_data:
-                if abs(np.linalg.norm(box_dict[marker_to_box_dict[m.id]].pos) - np.linalg.norm(b_pos)) > 0.5:
-                    print("marker pos jamping id: " + str(m.id))
-                elif np.sum(np.abs(np.dot(box_dict[marker_to_box_dict[m.id]].rot, b_rot.T) - np.identity(3))) > 0.40:
-                    print("marker rot jamping id: " + str(m.id) + " " + str(np.sum(np.dot(box_dict[marker_to_box_dict[m.id]].rot, b_rot) - np.identity(3))))
-                else:
+                if not marker_to_box_dict[m.id] in box_dict:
+                    box_dict[marker_to_box_dict[m.id]] = BoxData(marker_to_box_dict[m.id])
                     box_dict[marker_to_box_dict[m.id]].box_pose_data.header = m.header
                     box_dict[marker_to_box_dict[m.id]].box_marker_data.header = m.header
                     box_dict[marker_to_box_dict[m.id]].markers_data[m.id] = MarkerData(marker, b_pos, b_rot)
                     box_dict[marker_to_box_dict[m.id]].probability = 1.0
-                #else:
-                #    box_dict[marker_to_box_dict[m.id]].box_pose_data.header = m.header
-                #    box_dict[marker_to_box_dict[m.id]].box_marker_data.header = m.header
-                #    box_dict[marker_to_box_dict[m.id]].markers_data[m.id] = MarkerData(marker, b_pos, b_rot)
-                #    box_dict[marker_to_box_dict[m.id]].probability = 1.0
+                else:
+                    if box_dict[marker_to_box_dict[m.id]].probability < 0:
+                        box_dict[marker_to_box_dict[m.id]].redetect_init()
+                    if abs(np.linalg.norm(box_dict[marker_to_box_dict[m.id]].pos) - np.linalg.norm(b_pos)) > 0.5:
+                        print("marker pos jamping id: " + str(m.id))
+                    elif np.sum(np.abs(np.dot(box_dict[marker_to_box_dict[m.id]].rot, b_rot.T) - np.identity(3))) > 0.40:
+                        print("marker rot jamping id: " + str(m.id) + " " + str(np.sum(np.dot(box_dict[marker_to_box_dict[m.id]].rot, b_rot) - np.identity(3))))
+                    else:
+                        box_dict[marker_to_box_dict[m.id]].box_pose_data.header = m.header
+                        box_dict[marker_to_box_dict[m.id]].box_marker_data.header = m.header
+                        box_dict[marker_to_box_dict[m.id]].markers_data[m.id] = MarkerData(marker, b_pos, b_rot)
+                        box_dict[marker_to_box_dict[m.id]].probability = 1.0
+
+    elif marker_type == "stag":
+        for m in msg.stag_array:
+            if m.id.data in marker_to_box_dict.keys():
+                if not m.id.data in ignore_marker_dict.keys():
+                    ignore_marker_dict[m.id.data] = 2
+                    continue
+                elif ignore_marker_dict[m.id.data] > 0:
+                    ignore_marker_dict[m.id.data] -= 1
+                    continue
+                marker = Marker()
+                marker.header = m.header
+                marker.ns = "marker"
+                marker.id = m.id.data
+                marker.pose = m.pose
+                m_pos = np.array([marker.pose.position.x, marker.pose.position.y, marker.pose.position.z])
+                m_quat = np.quaternion(marker.pose.orientation.w, marker.pose.orientation.x, marker.pose.orientation.y, marker.pose.orientation.z)
+                m_new_pos = m_pos + np.dot(quaternion.as_rotation_matrix(m_quat), np.array([0, 0, marker_size * 0.01]))
+                marker.pose.position.x = m_new_pos[0]
+                marker.pose.position.y = m_new_pos[1]
+                marker.pose.position.z = m_new_pos[2]
+                marker.color.r = 1.0
+                marker.color.g = 0.0
+                marker.color.b = 0.0
+                marker.color.a = 0.5
+                marker.scale.x = marker_size
+                marker.scale.y = marker_size
+                marker.scale.z = marker_size * 0.02
+                marker.lifetime = rospy.Duration()
+                marker.type = 1
+
+                looked_time = m.header.stamp
+                #delay_time = rospy.Time.now() - m.header.stamp
+                #delay = delay_time.secs * 1000 + delay_time.nsecs / 1000000
+                #rospy.loginfo("marker_id: " + str(m.id) + " delay: " + str(delay) + "ms")
+
+                b_pos = np.array([m.pose.position.x, m.pose.position.y, m.pose.position.z])
+                b_rot = np.dot(quaternion.as_rotation_matrix(np.quaternion(m.pose.orientation.w, m.pose.orientation.x, m.pose.orientation.y, m.pose.orientation.z)), np.array(box_info[marker_to_box_dict[m.id.data]]['markers'][m.id.data]['rot']).T)
+                b_pos = m_pos + np.dot(b_rot, -np.array(box_info[marker_to_box_dict[m.id.data]]['markers'][m.id.data]['pos']))
+
+                if not marker_to_box_dict[m.id.data] in box_dict:
+                    box_dict[marker_to_box_dict[m.id.data]] = BoxData(marker_to_box_dict[m.id.data])
+                    box_dict[marker_to_box_dict[m.id.data]].box_pose_data.header = m.header
+                    box_dict[marker_to_box_dict[m.id.data]].box_marker_data.header = m.header
+                    box_dict[marker_to_box_dict[m.id.data]].markers_data[m.id.data] = MarkerData(marker, b_pos, b_rot)
+                    box_dict[marker_to_box_dict[m.id.data]].probability = 1.0
+                else:
+                    if box_dict[marker_to_box_dict[m.id.data]].probability < 0:
+                        box_dict[marker_to_box_dict[m.id.data]].redetect_init()
+                    if abs(np.linalg.norm(box_dict[marker_to_box_dict[m.id.data]].pos) - np.linalg.norm(b_pos)) > 0.5:
+                        print("marker pos jamping id: " + str(m.id.data))
+                    elif np.sum(np.abs(np.dot(box_dict[marker_to_box_dict[m.id.data]].rot, b_rot.T) - np.identity(3))) > 0.40:
+                        print("marker rot jamping id: " + str(m.id.data) + " " + str(np.sum(np.dot(box_dict[marker_to_box_dict[m.id.data]].rot, b_rot) - np.identity(3))))
+                    else:
+                        box_dict[marker_to_box_dict[m.id.data]].box_pose_data.header = m.header
+                        box_dict[marker_to_box_dict[m.id.data]].box_marker_data.header = m.header
+                        box_dict[marker_to_box_dict[m.id.data]].markers_data[m.id.data] = MarkerData(marker, b_pos, b_rot)
+                        box_dict[marker_to_box_dict[m.id.data]].probability = 1.0
+
 
 
     #ここでprobabilityが正しくなる
@@ -829,9 +883,15 @@ def handle_lift_box(req):
     return LiftBoxResponse(weight)
 
 s = rospy.Service('lift_box_id', LiftBox, handle_lift_box)
-    
-rospy.Subscriber("ar_pose_marker", AlvarMarkers, callback)
+
+if marker_type == "ar":
+    print("ar mode")
+    rospy.Subscriber("ar_pose_marker", AlvarMarkers, callback)
+elif marker_type == "stag":
+    print("stag mode")
+    rospy.Subscriber("stag_ros/markers", STagMarkerArray, callback)
 rospy.Subscriber("look_box_mode", String, mode_cb)
 rospy.Subscriber("update_box_id", Bool, read_box_id)
 looked_time = rospy.Time.now()
+print("start")
 rospy.spin()
