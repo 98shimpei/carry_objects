@@ -11,13 +11,13 @@
 
 
   <node name="stag_node" pkg="stag_ros" type="stag_node" output="screen" required="true">
-    <rosparam command="load" file="$(find stag_ros)/cfg/single.yaml"/>
-    <rosparam command="load" file="$(find stag_ros)/cfg/single_config.yaml"/>
+    <rosparam command="load" file="$(find carry_objects)/cfg/stag.yaml"/>
+    <rosparam command="load" file="$(find carry_objects)/cfg/stag_config.yaml"/>
   </node>
 
   <!-- <node name="stag_ros_nodelet" pkg="stag_ros" type="stag_nodelet_runnable" output="screen" required="true">
-        <rosparam command="load" file="$(find stag_ros)/cfg/single.yaml"/>
-        <rosparam command="load" file="$(find stag_ros)/cfg/single_config.yaml"/>
+        <rosparam command="load" file="$(find carry_objects)/cfg/stag.yaml"/>
+        <rosparam command="load" file="$(find carry_objects)/cfg/stag_config.yaml"/>
   </node> -->
 
   <!-- <node pkg="carry_objects" name="marker_pub" type="arcube.py" /> -->
