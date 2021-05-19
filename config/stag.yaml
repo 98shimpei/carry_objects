@@ -1,0 +1,13 @@
+# STag parameters
+libraryHD: 15
+errorCorrection: 7
+
+# Camera configuration
+camera_info_topic: /rs_l515/color/camera_info
+raw_image_topic: /rs_l515/color/image_raw
+is_compressed: false
+
+# Node configuration
+tag_tf_prefix: STag_
+show_markers: true
+publish_tf: true
