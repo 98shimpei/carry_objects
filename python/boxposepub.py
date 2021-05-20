@@ -391,6 +391,8 @@ def callback(msg):
     #TODO: 二重に書いてるのどうにかしようね
     if marker_type == "ar":
         for m in msg.markers:
+            if np.linalg.norm(np.array([m.pose.position.x, m.pose.position.y, m.pose.position.z])) == 0:
+                continue
             if m.id in marker_to_box_dict.keys():
                 if not m.id in ignore_marker_dict.keys():
                     ignore_marker_dict[m.id] = 2
@@ -449,6 +451,8 @@ def callback(msg):
 
     elif marker_type == "stag":
         for m in msg.stag_array:
+            if np.linalg.norm(np.array([m.pose.position.x, m.pose.position.y, m.pose.position.z])) == 0:
+                continue
             if m.id.data in marker_to_box_dict.keys():
                 if not m.id.data in ignore_marker_dict.keys():
                     ignore_marker_dict[m.id.data] = 2
