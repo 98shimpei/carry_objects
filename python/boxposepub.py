@@ -499,9 +499,10 @@ def callback(msg):
                 else:
                     if box_dict[marker_to_box_dict[m.id.data]].probability < 0:
                         box_dict[marker_to_box_dict[m.id.data]].redetect_init()
-                    if abs(np.linalg.norm(box_dict[marker_to_box_dict[m.id.data]].pos) - np.linalg.norm(b_pos)) > 0.5:
+                    #if abs(np.linalg.norm(box_dict[marker_to_box_dict[m.id.data]].pos) - np.linalg.norm(b_pos)) > 0.5:
+                    if False:
                         print("marker pos jamping id: " + str(m.id.data))
-                    elif np.sum(np.abs(np.dot(box_dict[marker_to_box_dict[m.id.data]].rot, b_rot.T) - np.identity(3))) > 0.40:
+                    elif np.sum(np.abs(np.dot(box_dict[marker_to_box_dict[m.id.data]].rot, b_rot.T) - np.identity(3))) > 0.50:
                         print("marker rot jamping id: " + str(m.id.data) + " " + str(np.sum(np.dot(box_dict[marker_to_box_dict[m.id.data]].rot, b_rot) - np.identity(3))))
                     else:
                         box_dict[marker_to_box_dict[m.id.data]].box_pose_data.header = m.header
