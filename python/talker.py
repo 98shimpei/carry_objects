@@ -13,7 +13,9 @@ def callback(msg):
     print('back')
     tlock.acquire()
     difftime = rospy.Time.now() - pubtime
+    difftime_header = rospy.Time.now() - msg.header.stamp
     print(difftime.secs * 1000 + float(difftime.nsecs) / 1000000)
+    print(difftime_header.secs * 1000 + float(difftime_header.nsecs) / 1000000)
     tlock.release()
 
 def talker():
