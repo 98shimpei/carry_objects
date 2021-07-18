@@ -45,11 +45,12 @@
     (read-line)
     ))
   (send *ri* :start-auto-balancer :limbs '(:rarm :larm :rleg :lleg))
+  ;; (send *ri* :start-auto-balancer :limbs '(:rleg :lleg))
   (if simulation (start-footguided-modification nil) (start-footguided-modification t))
   (push-init)
   (send *ri* :set-auto-balancer-param
              :is-hand-fix-mode nil
-             :hand-fix-fall-gain 0.2 ;;995 運搬物の重心高さ[m]
+             :hand-fix-fall-gain 0.34 ;;995 運搬物の重心高さ[m]
              :hand-fix-slip-gain 0.995 ;;995
              :hand-fix-slip-limit 0.5 ;;5
              :hand-fix-body-gain (list 0.001 0.001 0.0003) ;;(list 0.001 0.001 0.0003)
@@ -384,7 +385,7 @@
   (setq *state* 'lift-box)
   )
 
-(defun lift-box-on-table (target-list &optional (nip_force 130) (grip nil))
+(defun lift-box-on-table (target-list &optional (nip_force 120) (grip nil))
   (while (align-boxes target-list nip_force) (print "align-boxes"))
   (print "lift")
   (ros::set-param "/boxpose_pub/top_box_id" (elt target-list (- (length target-list) 1)))
@@ -392,7 +393,7 @@
   (unix:sleep 1)
   (send *ri* :set-box-balancer (ros::get-param "/boxpose_pub/top_box_id") (ros::get-param"/boxpose_pub/base_box_id"))
   (lift-box-simple target-list nip_force grip)
-  (send *ri* :start-box-balancer nil grip 7 8 3.0 0.0045 0.001 0.4)
+  (send *ri* :start-box-balancer nil grip 7 8 4.0 0.0045 0.001 0.4)
   (print "start-box-balancer")
   (send *robot* :arms :move-end-pos #f(0 0 200) :world)
   (send *ri* :angle-vector (send *robot* :angle-vector))

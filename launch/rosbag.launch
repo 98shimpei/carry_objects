@@ -13,6 +13,7 @@
         /ar_pose_marker
         /rs_l515/color/camera_info
         /rs_l515/color/image_raw
+        /rs_l515/depth/color/points
 	      /tf
 	      /tf_static
 	/object_tracker/dest_image

@@ -8,6 +8,7 @@ def callback(msg):
     difftime = rospy.Time.now() - msg.header.stamp
     print(difftime.secs * 1000 + float(difftime.nsecs) / 1000000)
     pos = PointStamped()
+    pos.header.stamp = msg.header.stamp
     pub.publish(pos)
 
 def listener():
