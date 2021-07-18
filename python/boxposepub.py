@@ -22,7 +22,7 @@ from carry_objects.srv import *
 from carry_objects.msg import *
 
 box_info_fname = rospy.get_param("/boxpose_pub/info_yaml", "../config/box_info.yaml")
-marker_size = rospy.get_param("/ar_track_alvar/marker_size", 15.7) * 0.01 #cm -> m
+marker_size = rospy.get_param("/ar_track_alvar/marker_size", 8.4) * 0.01 #cm -> m
 world_tf = rospy.get_param("/boxpose_pub/world_tf", "/odom_ground")
 top_box_id = rospy.get_param("/boxpose_pub/top_box_id", 7)
 base_box_id = rospy.get_param("/boxpose_pub/base_box_id", 8)
@@ -99,9 +99,9 @@ class LookAtData:
         point_data.header.stamp = rospy.Time.now()
         if self.id in box_dict:
             self.look_at_pos, dummy_rot = box_dict[self.id].local_to_camera(self.local_pos)
-            point_data.point.x = self.look_at_pos[0]
-            point_data.point.y = self.look_at_pos[1]
-            point_data.point.z = self.look_at_pos[2]
+            point_data.point.x = -np.arctan2(self.look_at_pos[0], self.look_at_pos[2])
+            point_data.point.y = np.arctan2(self.look_at_pos[1], self.look_at_pos[2])
+            point_data.point.z = 1.0
             br = tf.TransformBroadcaster()
             br.sendTransform(
                 (self.look_at_pos[0], self.look_at_pos[1], self.look_at_pos[2]),
@@ -111,7 +111,7 @@ class LookAtData:
             point_data.point.x = 0.0
             point_data.point.y = 0.0
             point_data.point.z = 0.0
-        #look_at_point_pub.publish(point_data)
+        look_at_point_pub.publish(point_data)
 
 look_at_data = LookAtData(base_box_id, np.array([-box_info[base_box_id]['size'][0]/2.0, 0, box_info[base_box_id]['size'][2]/2.0]))
 
@@ -683,16 +683,16 @@ def callback(msg):
         elif box_dict[b].probability > -5:
             box_dict[b].disappear()
             box_dict[b].probability = -10
-        #br = tf.TransformBroadcaster()
-        #br.sendTransform(
-        #    (box_dict[b].pos[0],
-        #     box_dict[b].pos[1],
-        #     box_dict[b].pos[2]),
-        #    (box_dict[b].quat.x,
-        #     box_dict[b].quat.y,
-        #     box_dict[b].quat.z,
-        #     box_dict[b].quat.w),
-        #    rospy.Time.now(), "box"+str(b), marker_frame_id.lstrip())
+        br = tf.TransformBroadcaster()
+        br.sendTransform(
+            (box_dict[b].pos[0],
+             box_dict[b].pos[1],
+             box_dict[b].pos[2]),
+            (box_dict[b].quat.x,
+             box_dict[b].quat.y,
+             box_dict[b].quat.z,
+             box_dict[b].quat.w),
+            rospy.Time.now(), "box"+str(b), marker_frame_id.lstrip())
         if box_look_flag:
             box_dict[b].box_pose_data_update()
             box_poses_data.existence = True
@@ -743,7 +743,7 @@ def callback(msg):
             bid = top_box_id
             blocal = np.array([-box_info[top_box_id]['size'][0]/2.0, 0, -box_info[top_box_id]['size'][2]/2.0])
     elif look_box_mode == "box-balancer":
-        look_timer -= 0
+        look_timer -= 1
         if look_timer > 40: #上の箱見る
             if base_box_id in box_dict:
                 bid = base_box_id
