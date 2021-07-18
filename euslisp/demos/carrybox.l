@@ -50,9 +50,9 @@
   (push-init)
   (send *ri* :set-auto-balancer-param
              :is-hand-fix-mode nil
-             :hand-fix-fall-gain 0.34 ;;995 運搬物の重心高さ[m]
-             :hand-fix-slip-gain 0.995 ;;995
-             :hand-fix-slip-limit 0.5 ;;5
+             :hand-fix-fall-gain 0.33 ;;995 運搬物の重心高さ[m]
+             :hand-fix-slip-gain 0.999 ;;995
+             :hand-fix-slip-limit 1.0 ;;5
              :hand-fix-body-gain (list 0.001 0.001 0.0003) ;;(list 0.001 0.001 0.0003)
              :ik-mode 1)
   (if (not simulation) (let ()
@@ -351,7 +351,7 @@
   (print "力を入れる")
   (setq req (instance carry_objects::LiftBoxRequest :init))
   (send req :boxes target-list)
-  (setq box_weight (send (ros::service-call "lift_box_id" req) :weight))
+  (setq box_weight (+ 1.5 (send (ros::service-call "lift_box_id" req) :weight)))
   (if (< box_weight 0) (setq box_weight (send (send *ri* :get-box-weight) :operation_return)))
   (if grip (setq box_weight (/ box_weight 2)))
   (print box_weight)
