@@ -1,6 +1,6 @@
 <launch>
   <arg name="bagfile"
-       default="/home/shimpei/rosbag/test.bag"/>
+       default="/home/leus/rosbag/test.bag"/>
   <node name="rosbag_record"
 	pkg="rosbag" type="record"
 	args="-o $(arg bagfile)
@@ -14,7 +14,9 @@
         /rs_l515/color/camera_info
         /rs_l515/color/image_raw
 	      /tf
-	      /tf_static"
+	      /tf_static
+	/object_tracker/dest_image
+	/stag_ros/markers"
 	output="screen">
 </node>
 </launch>

@@ -11,13 +11,13 @@
 
 
   <node name="stag_node" pkg="stag_ros" type="stag_node" output="screen" required="true">
-    <rosparam command="load" file="$(find carry_objects)/cfg/stag.yaml"/>
-    <rosparam command="load" file="$(find carry_objects)/cfg/stag_config.yaml"/>
+    <rosparam command="load" file="$(find carry_objects)/config/stag.yaml"/>
+    <rosparam command="load" file="$(find carry_objects)/config/stag_config.yaml"/>
   </node>
 
   <!-- <node name="stag_ros_nodelet" pkg="stag_ros" type="stag_nodelet_runnable" output="screen" required="true">
-        <rosparam command="load" file="$(find carry_objects)/cfg/stag.yaml"/>
-        <rosparam command="load" file="$(find carry_objects)/cfg/stag_config.yaml"/>
+        <rosparam command="load" file="$(find carry_objects)/config/stag.yaml"/>
+        <rosparam command="load" file="$(find carry_objects)/config/stag_config.yaml"/>
   </node> -->
 
   <!-- <node pkg="carry_objects" name="marker_pub" type="arcube.py" /> -->
@@ -31,8 +31,8 @@
     <param name="marker_type" type="string" value="stag" />
   </node>
 
-  <node pkg="object_tracker" name="object_tracker" type="object_tracker" output="screen" >
+  <!-- <node pkg="object_tracker" name="object_tracker" type="object_tracker" output="screen" >
     <param name="marker_type" type="string" value="stag" />
-  </node>
+  </node> -->
 
 </launch>
