@@ -206,7 +206,7 @@ class BoxData:
             ft = 1.0
             self.localinitflag = False
         elif self.lift:
-            ft = 0.3
+            ft = 0.1
         self.fixed_pos = (1.0-ft) * self.fixed_pos + ft * tmp_pos
         self.fixed_rot = (1.0-ft) * self.fixed_rot + ft * tmp_rot
 
@@ -391,7 +391,7 @@ def callback(msg):
     #TODO: 二重に書いてるのどうにかしようね
     if marker_type == "ar":
         for m in msg.markers:
-            if np.linalg.norm(np.array([m.pose.position.x, m.pose.position.y, m.pose.position.z])) == 0:
+            if np.linalg.norm(np.array([m.pose.pose.position.x, m.pose.pose.position.y, m.pose.pose.position.z])) == 0:
                 continue
             if m.id in marker_to_box_dict.keys():
                 if not m.id in ignore_marker_dict.keys():

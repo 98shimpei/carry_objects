@@ -41,18 +41,20 @@
        )
        3000)
   (if (not simulation) (let ()
-    (print "press key to start-auto-balancer")
+    (print "press key to rmfo and  start-auto-balancer")
     (read-line)
     ))
+  (if (not simulation)
+    (send *ri* :remove-force-sensor-offset-rmfo))
   (send *ri* :start-auto-balancer :limbs '(:rarm :larm :rleg :lleg))
   ;; (send *ri* :start-auto-balancer :limbs '(:rleg :lleg))
   (if simulation (start-footguided-modification nil) (start-footguided-modification t))
   (push-init)
   (send *ri* :set-auto-balancer-param
              :is-hand-fix-mode nil
-             :hand-fix-fall-gain 0.33 ;;995 運搬物の重心高さ[m]
+             :hand-fix-fall-gain 0.02 ;;33 運搬物の重心高さ[m]
              :hand-fix-slip-gain 0.999 ;;995
-             :hand-fix-slip-limit 1.0 ;;5
+             :hand-fix-slip-limit 10.0 ;;5
              :hand-fix-body-gain (list 0.001 0.001 0.0003) ;;(list 0.001 0.001 0.0003)
              :ik-mode 1)
   (if (not simulation) (let ()
@@ -60,7 +62,6 @@
     (read-line)
     ))
   (send *ri* :start-st)
-  (send *ri* :remove-force-sensor-offset-rmfo-arms)
   (send *robot* :fix-leg-to-coords (make-coords))
   (setq *state* 'put)
   (print "close hands")
@@ -70,11 +71,15 @@
   ;;   (send *ri* :start-impedance :arms :K-r 100.0 :D-r 100.0 :M-r 1
   ;;                                     :K-p 80.0 :D-p 400.0 :M-p 5) ;; 300 300 5
   ;;   (setq *impedance_mode* t)))
-  (unless *impedance_mode* (progn
-    (send *ri* :stop-impedance :arms)
-    (send *ri* :start-impedance :arms :K-r 100.0 :D-r 100.0 :M-r 1
-                                      :K-p 300.0 :D-p 400.0 :M-p 5) ;; 300 300 5
-    (setq *impedance_mode* t)))
+  (if (not simulation) (let ()
+    (print "press key to start impedance control")
+    (read-line)
+    ))
+  ;;(unless *impedance_mode* (progn
+  ;;  (send *ri* :stop-impedance :arms)
+  ;;  (send *ri* :start-impedance :arms :K-r 100.0 :D-r 100.0 :M-r 1
+  ;;                                    :K-p 300.0 :D-p 400.0 :M-p 5) ;; 300 300 5
+  ;;  (setq *impedance_mode* t)))
   (print "start")
   )
 
@@ -351,7 +356,7 @@
   (print "力を入れる")
   (setq req (instance carry_objects::LiftBoxRequest :init))
   (send req :boxes target-list)
-  (setq box_weight (+ 1.5 (send (ros::service-call "lift_box_id" req) :weight)))
+  (setq box_weight (+ 0.0 (send (ros::service-call "lift_box_id" req) :weight)))
   (if (< box_weight 0) (setq box_weight (send (send *ri* :get-box-weight) :operation_return)))
   (if grip (setq box_weight (/ box_weight 2)))
   (print box_weight)
@@ -538,6 +543,19 @@
       )
     )
   ))
+)
+
+(defun marionette-mode ()
+  (setq *actual-robot* (copy-object *robot*))
+  (while t
+    (send *actual-robot* :angle-vector (send *ri* :state :potentio-vector))
+    (dolist (arm (list :rarm :larm))
+      (send *robot* arm :angle-vector (send *actual-robot* arm :angle-vector))
+    )
+    (send *ri* :angle-vector (send *robot* :angle-vector))
+    (mv)
+    (unix:usleep 200000) ;;20ms
+  )
 )
 
 (ros::subscribe "emergency_command" carry_objects::EmergencyCommand #'emergency_command_listener)

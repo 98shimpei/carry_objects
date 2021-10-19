@@ -11,4 +11,4 @@
 
 (progn (send *ri* :go-pos 0 1 90) (send *ri* :go-pos 0 -0.5 -90) (send *ri* :go-pos 0 -0.5 -90) (send *ri* :go-pos 0 -1 -90) (send *ri* :go-pos 0 0.5 90) (send *ri* :go-pos 0 0.5 90))
 
-(progn (send *ri* :go-velocity 0.1 0 0) (unix:sleep 5) (send *ri* :go-velocity -0.1 0 0) (unix:sleep 5))
+(progn (send *ri* :go-velocity 0.1 0 0) (unix:sleep 8) (send *ri* :go-velocity 0 0 0) (unix:sleep 3) (send *ri* :go-velocity -0.1 0 0) (unix:sleep 8) (send *ri* :go-stop))
