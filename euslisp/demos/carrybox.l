@@ -20,6 +20,20 @@
 (setq *current-robot* (instance jaxon_red-robot :init))
 (send *current-robot* :fix-leg-to-coords (make-coords))
 
+(defun start_jaxon_tutorial ()
+  (setq *robot* *jaxon_red*)
+  (print "press key to rmfo and  start-auto-balancer")
+  (read-line)
+  (send *ri* :remove-force-sensor-offset-rmfo)
+  (send *ri* :start-auto-balancer :limbs '(:rarm :larm :rleg :lleg))
+  (print "press key to start-st")
+  (read-line)
+  (send *ri* :start-st)
+  (send *robot* :fix-leg-to-coords (make-coords))
+  (setq *state* 'put)
+  (setq *impedance_mode* t)
+)
+
 (defun start (&optional (simulation nil))
   (if simulation (setq *simulation_mode* t) (setq *simulation_mode* nil))
   (setq *robot* *jaxon_red*)
@@ -45,16 +59,17 @@
     (read-line)
     ))
   (if (not simulation)
-    (send *ri* :remove-force-sensor-offset-rmfo))
+    (send *ri* :remove-force-sensor-offset-rmfo)
+    (send *ri* :remove-force-sensor-offset-rmfo-arms))
   (send *ri* :start-auto-balancer :limbs '(:rarm :larm :rleg :lleg))
   ;; (send *ri* :start-auto-balancer :limbs '(:rleg :lleg))
   (if simulation (start-footguided-modification nil) (start-footguided-modification t))
   (push-init)
   (send *ri* :set-auto-balancer-param
              :is-hand-fix-mode nil
-             :hand-fix-fall-gain 0.02 ;;33 運搬物の重心高さ[m]
+             :hand-fix-fall-gain 0.15 ;;33 運搬物の重心高さ[m]
              :hand-fix-slip-gain 0.999 ;;995
-             :hand-fix-slip-limit 10.0 ;;5
+             :hand-fix-slip-limit 0.5 ;;5
              :hand-fix-body-gain (list 0.001 0.001 0.0003) ;;(list 0.001 0.001 0.0003)
              :ik-mode 1)
   (if (not simulation) (let ()
@@ -75,11 +90,11 @@
     (print "press key to start impedance control")
     (read-line)
     ))
-  ;;(unless *impedance_mode* (progn
-  ;;  (send *ri* :stop-impedance :arms)
-  ;;  (send *ri* :start-impedance :arms :K-r 100.0 :D-r 100.0 :M-r 1
-  ;;                                    :K-p 300.0 :D-p 400.0 :M-p 5) ;; 300 300 5
-  ;;  (setq *impedance_mode* t)))
+  (unless *impedance_mode* (progn
+    (send *ri* :stop-impedance :arms)
+    (send *ri* :start-impedance :arms :K-r 100.0 :D-r 100.0 :M-r 1
+                                      :K-p 300.0 :D-p 400.0 :M-p 5) ;; 300 300 5
+    (setq *impedance_mode* t)))
   (print "start")
   )
 
@@ -241,6 +256,7 @@
   (setq req (instance carry_objects::LiftBoxRequest :init))
   (send req :boxes (list))
   (setq box_weight (send (ros::service-call "lift_box_id" req) :weight))
+  (setq box_weight 0) ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   (print "置く")
   (send *robot* :rarm :inverse-kinematics (send (send *goal_rhand_pose* :copy-worldcoords) :transform (make-coords :pos #f(0 0 -150))))
   (send *robot* :larm :inverse-kinematics (send (send *goal_lhand_pose* :copy-worldcoords) :transform (make-coords :pos #f(0 0 -150))))
@@ -289,7 +305,7 @@
   ;;一度20cm手前に移動
   (while (or (> (norm (float-vector (elt (send *pre_body_pose* :worldpos) 0) (elt (send *pre_body_pose* :worldpos) 1))) 100) (> theta 15)) (progn
     (setq vel (float-vector (elt (send *pre_body_pose* :worldpos) 0) (elt (send *pre_body_pose* :worldpos) 1)))
-    (setq vel (scale (/ 100.0 (norm vel)) vel))
+    (setq vel (scale (/ 50.0 (norm vel)) vel))
     (setq omega_abs (min 4.0 (abs (* 0.8 theta)))) ;;360/(2*pi)　書くのめんどかった
     (setq omega (if (> theta 0) omega_abs (- omega_abs)))
     (print vel)
@@ -329,18 +345,18 @@
   
   ;;挟む
   (print "挟む")
-  (send *robot* :rarm :inverse-kinematics (send (send *rhand_pose* :copy-worldcoords) :transform (make-coords :pos #f(-100 0 -100))))
-  (send *robot* :larm :inverse-kinematics (send (send *lhand_pose* :copy-worldcoords) :transform (make-coords :pos #f(-100 0 -100))))
+  (send *robot* :rarm :inverse-kinematics (send (send *rhand_pose* :copy-worldcoords) :transform (make-coords :pos #f(-100 -100 0))))
+  (send *robot* :larm :inverse-kinematics (send (send *lhand_pose* :copy-worldcoords) :transform (make-coords :pos #f(-100  100 0))))
   (send *ri* :angle-vector (send *robot* :angle-vector) 3000)
   (send *ri* :wait-interpolation)
-  (send *robot* :rarm :inverse-kinematics (send (send *rhand_pose* :copy-worldcoords) :transform (make-coords :pos #f(0 0 -100))))
-  (send *robot* :larm :inverse-kinematics (send (send *lhand_pose* :copy-worldcoords) :transform (make-coords :pos #f(0 0 -100))))
+  (send *robot* :rarm :inverse-kinematics (send (send *rhand_pose* :copy-worldcoords) :transform (make-coords :pos #f(0 -100 0))))
+  (send *robot* :larm :inverse-kinematics (send (send *lhand_pose* :copy-worldcoords) :transform (make-coords :pos #f(0  100 0))))
   (send *ri* :angle-vector (send *robot* :angle-vector) 3000)
   (send *ri* :wait-interpolation)
   (unless *impedance_mode* (progn
     (send *ri* :stop-impedance :arms)
-    (send *ri* :start-impedance :arms :K-r 100.0 :D-r 100.0 :M-r 1
-                                      :K-p 100.0 :D-p 100.0 :M-p 5) ;; 300 300 5
+    (send *ri* :start-impedance :arms :K-r 500.0 :D-r 500.0 :M-r 1
+                                      :K-p 500.0 :D-p 500.0 :M-p 5) ;; 300 300 5
     (setq *impedance_mode* t)))
   (update-tf-pose (list "rhand_pose" "lhand_pose" "rarm_end_coords" "larm_end_coords"))
   (setq rdiff (v- (send *rhand_pose* :worldpos) (send *rarm_end_coords* :worldpos)))
@@ -360,6 +376,7 @@
   (if (< box_weight 0) (setq box_weight (send (send *ri* :get-box-weight) :operation_return)))
   (if grip (setq box_weight (/ box_weight 2)))
   (print box_weight)
+  (setq box_weight 0);;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   (send *ri* :set-ref-forces
       (list
        (float-vector 0 0 (* (+ (* (send *robot* :weight) 0.001) box_weight) 4.9)) 
