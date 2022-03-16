@@ -22,16 +22,18 @@
     )
 
 (defun go-coop-pose ()
-  (send *robot* :larm :inverse-kinematics (make-coords :pos #f(680 230 950) :rpy (list 0 0 0))) ;; 580 230 1000
-  (send *robot* :rarm :inverse-kinematics (make-coords :pos #f(680 -230 950) :rpy (list 0 0 0)))
+  ;; (send *robot* :larm :inverse-kinematics (make-coords :pos #f(680 230 950) :rpy (list 0 0 0))) ;; 580 230 1000
+  ;; (send *robot* :rarm :inverse-kinematics (make-coords :pos #f(680 -230 950) :rpy (list 0 0 0)))
+  (send *robot* :larm :inverse-kinematics (make-coords :pos #f(580 230 947) :rpy (list 0 -0.002 0))) ;; 580 230 1000
+  (send *robot* :rarm :inverse-kinematics (make-coords :pos #f(580 -230 950) :rpy (list 0 -0.002 0)))
   (send *robot* :head :angle-vector #f(0 10))
   (send *ri* :angle-vector (send *robot* :angle-vector) 3000)
   (send *ri* :wait-interpolation)
   )
 
 (defun go-lift-pose ()
-  (send *robot* :larm :inverse-kinematics (make-coords :pos #f(350 370 1100) :rpy (list (deg2rad -25) 0 (deg2rad 90))))
-  (send *robot* :rarm :inverse-kinematics (make-coords :pos #f(350 -370 1100) :rpy (list (deg2rad 25) 0 (deg2rad -90))))
+  (send *robot* :larm :inverse-kinematics (make-coords :pos #f(250 470 1050) :rpy (list (deg2rad 0) 0 0))) ;; 400->370
+  (send *robot* :rarm :inverse-kinematics (make-coords :pos #f(250 -470 1050) :rpy (list (deg2rad 0) 0 0)))
   (send *ri* :angle-vector (send *robot* :angle-vector) 3000)
   (send *ri* :wait-interpolation)
   )
@@ -45,6 +47,14 @@
   (send *robot* :head :angle-vector #f(0 10))
   (send *robot* :larm :move-end-pos #f(-50 150 50))
   (send *robot* :rarm :move-end-pos #f(-50 -150 50))
+  (send *ri* :angle-vector (send *robot* :angle-vector))
+  (send *ri* :wait-interpolation)
+  )
+
+(defun go-case-pose ()
+  (send *robot* :rarm :inverse-kinematics (make-coords :pos #f(270 -240 900) :rpy (list (deg2rad 10) (deg2rad 80) (deg2rad 10))))
+  (send *robot* :larm :inverse-kinematics (make-coords :pos #f(270 240 900) :rpy (list (deg2rad -15) (deg2rad 80) (deg2rad -15))))
+  (send *robot* :legs :crotch-p :joint-angle -10)
   (send *ri* :angle-vector (send *robot* :angle-vector))
   (send *ri* :wait-interpolation)
   )
@@ -72,6 +82,30 @@
                                     :K-p 700.0 :D-p 700.0 :M-p 5)
   )
 
+(defun go-cart-pose ()
+  (send *robot* :larm :inverse-kinematics (make-coords :pos #f(550 270 1100) :rpy (list (deg2rad 0) 0 (deg2rad 90))))
+  (send *robot* :rarm :inverse-kinematics (make-coords :pos #f(550 -270 1100) :rpy (list (deg2rad 0) 0 (deg2rad -90))))
+  (send *ri* :angle-vector (send *robot* :angle-vector) 7000)
+  (send *ri* :wait-interpolation)
+  (print "set cart")
+  (read-line)
+  (send *robot* :larm :inverse-kinematics (make-coords :pos #f(550 170 1100) :rpy (list (deg2rad 0) 0 (deg2rad 90))))
+  (send *robot* :rarm :inverse-kinematics (make-coords :pos #f(550 -170 1100) :rpy (list (deg2rad 0) 0 (deg2rad -90))))
+  (send *ri* :angle-vector (send *robot* :angle-vector) 3000)
+  (send *ri* :wait-interpolation)
+  (send *robot* :larm :inverse-kinematics (make-coords :pos #f(550 170 900) :rpy (list (deg2rad 0) 0 (deg2rad 90))))
+  (send *robot* :rarm :inverse-kinematics (make-coords :pos #f(550 -170 900) :rpy (list (deg2rad 0) 0 (deg2rad -90))))
+  (send *ri* :angle-vector (send *robot* :angle-vector) 3000)
+  (send *ri* :wait-interpolation)
+  )
+  
+(defun go-wheelbarrow-pose ()
+  (send *robot* :rarm :inverse-kinematics (make-coords :pos #f(450 -295 800) :rpy (list (deg2rad 0) (deg2rad 90) (deg2rad 0))))
+  (send *robot* :larm :inverse-kinematics (make-coords :pos #f(450 295 800) :rpy (list (deg2rad 0) (deg2rad 90) (deg2rad 0))))
+  (send *ri* :angle-vector (send *robot* :angle-vector) 7000)
+  (send *ri* :wait-interpolation)
+  )
+
 (defun govel (&optional (wait-time 5))
   (send *ri* :go-velocity 0 0 0)
   (unix:sleep wait-time)
@@ -92,4 +126,13 @@
 (defun send-pose ()
   (send *robot* :angle-vector (send *ri* :reference-vector))
   (send *ri* :angle-vector (send *robot* :angle-vector))
+  )
+
+(defun start-toe-mode
+    ()
+  (send *ri* :set-gait-generator-param
+	:toe-angle 20 :heel-angle 0
+	:toe-heel-phase-ratio #f(0.05 0.3 0.4 0.0 0.1 0.1 0.05)
+	:use-toe-heel-transition t
+	:use-toe-heel-auto-set t)
   )

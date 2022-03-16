@@ -1,12 +1,14 @@
 #!/usr/bin/env roseus
 
-(load "package://carry_objects/euslisp/jaxonred.l")
-(load "package://carry_objects/euslisp/utils.l")
+(load "package://hrpsys_ros_bridge_tutorials/euslisp/jaxon-interface.l")
+(load "~/catkin_ws/sato/src/carry_objects/euslisp/utils.l")
 (ros::load-ros-manifest "roseus")
 (ros::roseus-add-msgs "geometry_msgs")
 (ros::roseus-add-msgs "std_msgs")
 (ros::roseus-add-srvs "carry_objects")
 (ros::roseus-add-msgs "carry_objects")
+
+(jaxon-init)
 
 (setq *impedance_mode* nil)
 (setq *dummy-spin* t)
@@ -17,11 +19,11 @@
 (setq *tfl* (instance ros::transform-listener :init))
 (ros::advertise "update_box_id" std_msgs::Bool 1)
 (ros::advertise "look_box_mode" std_msgs::string 1)
-(setq *current-robot* (instance jaxon_red-robot :init))
+(setq *current-robot* (instance jaxon-robot :init))
 (send *current-robot* :fix-leg-to-coords (make-coords))
 
 (defun start_jaxon_tutorial ()
-  (setq *robot* *jaxon_red*)
+  (setq *robot* *jaxon*)
   (print "press key to rmfo and  start-auto-balancer")
   (read-line)
   (send *ri* :remove-force-sensor-offset-rmfo)
@@ -34,53 +36,9 @@
   (setq *impedance_mode* t)
 )
 
-(defun start_kojio (&optional (simulation nil))
-  (if simulation (setq *simulation_mode* t) (setq *simulation_mode* nil))
-  (setq *robot* *jaxon_red*)
-  (send *ri* :stop-st)
-  (send *ri* :stop-auto-balancer)
-  (send *ri* :set-ref-forces
-      (list
-       (float-vector 0 0 0) 
-       (float-vector 0 0 0) 
-       (float-vector 0 0 0) ;;rarm -260  mg/2
-       (float-vector 0 0 0) ;;larm -285
-       )
-       3000)
-  (if (not simulation) (let ()
-    (print "press key to rmfo and  start-auto-balancer")
-    (read-line)
-    ))
-  (if (not simulation)
-    (send *ri* :remove-force-sensor-offset-rmfo)
-    (send *ri* :remove-force-sensor-offset-rmfo-arms))
-  ;; (send *ri* :start-auto-balancer :limbs '(:rarm :larm :rleg :lleg))
-  (send *ri* :start-auto-balancer :limbs '(:rleg :lleg))
-  (if simulation (start-footguided-modification nil) (start-footguided-modification t))
-  (push-init)
-  (if (not simulation) (let ()
-    (print "press key to start-st")
-    (read-line)
-    ))
-  (send *ri* :start-st)
-  (send *robot* :fix-leg-to-coords (make-coords))
-  (setq *state* 'put)
-  (print "close hands")
-  (if (not simulation) (let ()
-    (print "press key to start impedance control")
-    (read-line)
-    ))
-  (unless *impedance_mode* (progn
-    (send *ri* :stop-impedance :arms)
-    (send *ri* :start-impedance :arms :K-r 100.0 :D-r 100.0 :M-r 1
-                                      :K-p 300.0 :D-p 400.0 :M-p 5) ;; 300 300 5
-    (setq *impedance_mode* t)))
-  (print "start")
-  )
-
 (defun start (&optional (simulation nil))
   (if simulation (setq *simulation_mode* t) (setq *simulation_mode* nil))
-  (setq *robot* *jaxon_red*)
+  (setq *robot* *jaxon*)
   ;; (send *robot* :angle-vector (send *ri* :state :potentio-vector))
   ;; (send *ri* :angle-vector (send *robot* :reset-pose))
   (send *ri* :stop-st)
@@ -92,8 +50,8 @@
   ;;     )
   (send *ri* :set-ref-forces
       (list
-       (float-vector 0 0 0) 
-       (float-vector 0 0 0) 
+       (float-vector 0 0 (* (send *robot* :weight) 0.0049)) 
+       (float-vector 0 0 (* (send *robot* :weight) 0.0049)) 
        (float-vector 0 0 0) ;;rarm -260  mg/2
        (float-vector 0 0 0) ;;larm -285
        )
@@ -111,9 +69,9 @@
   (push-init)
   (send *ri* :set-auto-balancer-param
              :is-hand-fix-mode nil
-             :hand-fix-fall-gain 0.15 ;;33 運搬物の重心高さ[m]
+             :hand-fix-fall-gain 0.02 ;;33 運搬物の重心高さ[m]
              :hand-fix-slip-gain 0.999 ;;995
-             :hand-fix-slip-limit 0.5 ;;5
+             :hand-fix-slip-limit 10.0 ;;5
              :hand-fix-body-gain (list 0.001 0.001 0.0003) ;;(list 0.001 0.001 0.0003)
              :ik-mode 1)
   (if (not simulation) (let ()
@@ -210,7 +168,7 @@
       (send *ri* :go-velocity (* 0.001 (elt vel 0)) (* 0.001 (elt vel 1)) omega)
       (if active-modification (progn (print "check misalignment") (ros::spin-once)))
       (if *return* (progn (setq *return* nil) (return-from put-on-box nil)))
-      (unix:usleep 500000)
+      (unix:sleep 1)
       (update-tf-pose (list "goal_body_pose"))
       (setq body-x (transform (send *goal_body_pose* :rot) #f(1 0 0)))
       (setq theta (* 57.2957795131 (atan2 (elt body-x 1) (elt body-x 0)))) ;;360/(2*pi)　書くのめんどかった
@@ -222,12 +180,12 @@
     (ros::publish "look_box_mode" msg)
     (print "change look_box_mode: put-box")
     (send *ri* :stop-box-balancer 1.0)
-    (unix:usleep 500000)
+    (unix:sleep 1)
     (update-tf-pose (list "goal_body_pose"))
     (setq body-x (transform (send *goal_body_pose* :worldrot) #f(1 0 0)))
     (setq theta (* 57.2957795131 (atan2 (elt body-x 1) (elt body-x 0)))) ;;360/(2*pi)　書くのめんどかった
     (send *ri* :go-pos (* 0.001 (elt (send *goal_body_pose* :worldpos) 0)) (* 0.001 (elt (send *goal_body_pose* :worldpos) 1)) theta)
-    (unix:usleep 500000)
+    (unix:sleep 1)
 
     ;;把持高さへ移動
     (update-tf-pose (list "rhand_pose" "lhand_pose" "goal_rhand_pose" "goal_lhand_pose"))
@@ -241,14 +199,14 @@
       (send *robot* :legs :move-end-pos (float-vector 0 0 z_move))
       (send *ri* :angle-vector (send *robot* :angle-vector) 9000)
       (send *ri* :wait-interpolation)
-      (unix:usleep 500000)
+      (unix:sleep 1)
       ))
     ))
   (setq msg (instance std_msgs::string :init))
   (send msg :data (format nil "put-box"))
   (ros::publish "look_box_mode" msg)
   (print "change look_box_mode: put-box")
-  (unix:usleep 500000)
+  (unix:sleep 1)
   ;;箱の状態取得
   (update-tf-pose (list "rhand_pose" "lhand_pose" "goal_rhand_pose" "goal_lhand_pose"))
   (setq rdiff (v- (send *goal_rhand_pose* :worldpos) (send *rhand_pose* :worldpos)))
@@ -263,7 +221,7 @@
   (send *robot* :arms :move-end-pos #f(0 0 15) :world)
   (send *ri* :angle-vector (send *robot* :angle-vector) 3000)
   (send *ri* :wait-interpolation)
-  (unix:usleep 500000)
+  (unix:sleep 3)
   ;;箱の状態取得
   (update-tf-pose (list "rhand_pose" "lhand_pose" "goal_rhand_pose" "goal_lhand_pose"))
   (setq rdiff (v- (send *goal_rhand_pose* :worldpos) (send *rhand_pose* :worldpos)))
@@ -276,9 +234,9 @@
     (send *robot* :rarm :move-end-pos rdiff :world)
     (send *robot* :larm :move-end-pos ldiff :world)
     (send *robot* :arms :move-end-pos #f(0 0 15) :world)
-    (send *ri* :angle-vector (send *robot* :angle-vector) 1000)
+    (send *ri* :angle-vector (send *robot* :angle-vector) 3000)
     (send *ri* :wait-interpolation)
-    (unix:usleep 500000)
+    (unix:sleep 1)
     ;;箱の状態取得
     (update-tf-pose (list "rhand_pose" "lhand_pose" "goal_rhand_pose" "goal_lhand_pose"))
     (setq rdiff (v- (send *goal_rhand_pose* :worldpos) (send *rhand_pose* :worldpos)))
@@ -290,21 +248,20 @@
   (print "力を弱める")
   (send *ri* :set-ref-forces
         (list
-         (float-vector 0 0 0)
-         (float-vector 0 0 0)
+         (float-vector 0 0 (* (send *robot* :weight) 0.0049))
+         (float-vector 0 0 (* (send *robot* :weight) 0.0049))
          (float-vector 0 0 0) ;;rarm -260  mg/2
          (float-vector 0 0 0) ;;larm -285
          )
          2000)
-  (unix:usleep 500000)
+  (unix:sleep 2)
   (setq req (instance carry_objects::LiftBoxRequest :init))
   (send req :boxes (list))
   (setq box_weight (send (ros::service-call "lift_box_id" req) :weight))
-  (setq box_weight 0) ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   (print "置く")
-  (send *robot* :rarm :inverse-kinematics (send (send *goal_rhand_pose* :copy-worldcoords) :transform (make-coords :pos #f(0 -150 0))))
-  (send *robot* :larm :inverse-kinematics (send (send *goal_lhand_pose* :copy-worldcoords) :transform (make-coords :pos #f(0  150 0))))
-  (send *ri* :angle-vector (send *robot* :angle-vector) 2000)
+  (send *robot* :rarm :inverse-kinematics (send (send *goal_rhand_pose* :copy-worldcoords) :transform (make-coords :pos #f(0 0 -150))))
+  (send *robot* :larm :inverse-kinematics (send (send *goal_lhand_pose* :copy-worldcoords) :transform (make-coords :pos #f(0 0 -150))))
+  (send *ri* :angle-vector (send *robot* :angle-vector) 3000)
   (send *ri* :wait-interpolation)
   (setq *state* 'put)
   (if (> z_move 0) (print "かがんだ分高さ戻す"))
@@ -334,7 +291,7 @@
   (send msg :data (format nil "lift-box"))
   (ros::publish "look_box_mode" msg)
   (print "change look_box_mode: lift-box")
-  (unix:sleep 1)
+  (unix:sleep 3)
 
   ;;把持位置へ移動
   (update-tf-pose (list "body_pose"))
@@ -349,20 +306,20 @@
   ;;一度20cm手前に移動
   (while (or (> (norm (float-vector (elt (send *pre_body_pose* :worldpos) 0) (elt (send *pre_body_pose* :worldpos) 1))) 100) (> theta 15)) (progn
     (setq vel (float-vector (elt (send *pre_body_pose* :worldpos) 0) (elt (send *pre_body_pose* :worldpos) 1)))
-    (setq vel (scale (/ 50.0 (norm vel)) vel))
+    (setq vel (scale (/ 100.0 (norm vel)) vel))
     (setq omega_abs (min 4.0 (abs (* 0.8 theta)))) ;;360/(2*pi)　書くのめんどかった
     (setq omega (if (> theta 0) omega_abs (- omega_abs)))
     (print vel)
     (print omega)
     (send *ri* :go-velocity (* 0.001 (elt vel 0)) (* 0.001 (elt vel 1)) omega)
-    (unix:usleep 500000)
+    (unix:sleep 1)
     (update-tf-pose (list "body_pose"))
     (setq *pre_body_pose* (send *body_pose* :transform (make-coords :pos #f(-200 0 0))))
     (setq body-x (transform (send *body_pose* :rot) #f(1 0 0)))
     (setq theta (* 57.2957795131 (atan2 (elt body-x 1) (elt body-x 0)))) ;;360/(2*pi)　書くのめんどかった
     ))
     (send *ri* :go-stop)
-    (unix:usleep 500000)
+    (unix:sleep 1)
 
     ;;再度*body_pose*を設定し、移動
     (print "把持位置へ移動")
@@ -370,7 +327,7 @@
     (setq body-x (transform (send *body_pose* :rot) #f(1 0 0)))
     (setq theta (* 57.2957795131 (atan2 (elt body-x 1) (elt body-x 0)))) ;;360/(2*pi)　書くのめんどかった
     (send *ri* :go-pos (* 0.001 (elt (send *body_pose* :worldpos) 0)) (* 0.001 (elt (send *body_pose* :worldpos) 1)) theta)
-    (unix:usleep 500000)
+    (unix:sleep 2)
   ))
 
   ;;把持高さへ移動
@@ -381,21 +338,21 @@
     (print "かがむ")
     (setq z_move (- 950 (elt hand_ave 2)))
     (send *robot* :legs :move-end-pos (float-vector 0 0 z_move))
-    (send *ri* :angle-vector (send *robot* :angle-vector) 5000)
+    (send *ri* :angle-vector (send *robot* :angle-vector) 12000)
     (send *ri* :wait-interpolation)
-    (unix:usleep 500000)
+    (unix:sleep 1)
     (update-tf-pose (list "rhand_pose" "lhand_pose"))
     ))
   
   ;;挟む
   (print "挟む")
-  (send *robot* :rarm :inverse-kinematics (send (send *rhand_pose* :copy-worldcoords) :transform (make-coords :pos #f(-100 -100 0))))
-  (send *robot* :larm :inverse-kinematics (send (send *lhand_pose* :copy-worldcoords) :transform (make-coords :pos #f(-100  100 0))))
+  (send *robot* :rarm :inverse-kinematics (send (send *rhand_pose* :copy-worldcoords) :transform (make-coords :pos #f(-100 0 -100))))
+  (send *robot* :larm :inverse-kinematics (send (send *lhand_pose* :copy-worldcoords) :transform (make-coords :pos #f(-100 0 -100))))
   (send *ri* :angle-vector (send *robot* :angle-vector) 3000)
   (send *ri* :wait-interpolation)
-  (send *robot* :rarm :inverse-kinematics (send (send *rhand_pose* :copy-worldcoords) :transform (make-coords :pos #f(0 -100 0))))
-  (send *robot* :larm :inverse-kinematics (send (send *lhand_pose* :copy-worldcoords) :transform (make-coords :pos #f(0  100 0))))
-  (send *ri* :angle-vector (send *robot* :angle-vector) 2000)
+  (send *robot* :rarm :inverse-kinematics (send (send *rhand_pose* :copy-worldcoords) :transform (make-coords :pos #f(0 0 -100))))
+  (send *robot* :larm :inverse-kinematics (send (send *lhand_pose* :copy-worldcoords) :transform (make-coords :pos #f(0 0 -100))))
+  (send *ri* :angle-vector (send *robot* :angle-vector) 3000)
   (send *ri* :wait-interpolation)
   (unless *impedance_mode* (progn
     (send *ri* :stop-impedance :arms)
@@ -407,10 +364,10 @@
   (setq ldiff (v- (send *lhand_pose* :worldpos) (send *larm_end_coords* :worldpos)))
   (send *robot* :rarm :move-end-pos rdiff :world)
   (send *robot* :larm :move-end-pos ldiff :world)
-  (send *ri* :angle-vector (send *robot* :angle-vector) 1000)
+  (send *ri* :angle-vector (send *robot* :angle-vector) 3000)
   (send *ri* :wait-interpolation)
 
-  (unix:usleep 500000)
+  (unix:sleep 3)
   (if grip (send *ri* :move-gripper :arms 0.9 :wait t))
   ;;力を入れる
   (print "力を入れる")
@@ -420,16 +377,15 @@
   (if (< box_weight 0) (setq box_weight (send (send *ri* :get-box-weight) :operation_return)))
   (if grip (setq box_weight (/ box_weight 2)))
   (print box_weight)
-  ;;(setq box_weight 0);;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   (send *ri* :set-ref-forces
       (list
-       (float-vector 0 0 0) 
-       (float-vector 0 0 0) 
+       (float-vector 0 0 (* (+ (* (send *robot* :weight) 0.001) box_weight) 4.9)) 
+       (float-vector 0 0 (* (+ (* (send *robot* :weight) 0.001) box_weight) 4.9)) 
        (float-vector 0 (* -1 nip_force) (* -1.0 (* box_weight 4.9))) ;;rarm -260  mg/2
        (float-vector 0 (*  1 nip_force) (* -1.0 (* box_weight 4.9))) ;;larm -285
        )
        3000)
-  (unix::usleep 500000)
+  (unix::sleep 3)
 
   ;; ;;持ち上げる
   ;; (send *robot* :arms :move-end-pos #f(0 0 50) :world)
@@ -451,20 +407,20 @@
   (setq *state* 'lift-box)
   )
 
-(defun lift-box-on-table (target-list &optional (nip_force 120) (grip nil))
-  ;; (while (align-boxes target-list nip_force) (print "align-boxes"))
+(defun lift-box-on-table (target-list &optional (nip_force 60) (grip nil)) ;;120
+  (while (align-boxes target-list nip_force) (print "align-boxes"))
   (print "lift")
   (ros::set-param "/boxpose_pub/top_box_id" (elt target-list (- (length target-list) 1)))
   (if (= (length target-list) 1) (ros::set-param "/boxpose_pub/base_box_id" (elt target-list 0)) (ros::set-param "/boxpose_pub/base_box_id" (elt target-list (- (length target-list) 2))))
-  (unix:usleep 500000)
+  (unix:sleep 1)
   ;; (send *ri* :set-box-balancer (ros::get-param "/boxpose_pub/top_box_id") (ros::get-param"/boxpose_pub/base_box_id"))
   (lift-box-simple target-list nip_force grip)
   ;; (send *ri* :start-box-balancer nil grip 7 8 4.0 0.0045 0.001 0.4)
-  ;; (print "start-box-balancer")
+  (print "start-box-balancer")
   (send *robot* :arms :move-end-pos #f(0 0 200) :world)
   (send *ri* :angle-vector (send *robot* :angle-vector))
   (send *ri* :wait-interpolation)
-  (unix:usleep 500000)
+  (unix:sleep 3)
   )
 
 (defun align-boxes (target-list &optional (nip_force 130))
@@ -482,13 +438,13 @@
     (send msg :data (format nil "lift-box"))
     (ros::publish "look_box_mode" msg)
     (print "change look_box_mode: lift-box")
-    (unix:usleep 500000)
+    (unix:sleep 2)
     (unless (send *tfl* :wait-for-transform "goal_rhand_pose" "rhand_pose" (ros::time 0) 3) (return nil))
     (unless (send *tfl* :wait-for-transform "goal_lhand_pose" "lhand_pose" (ros::time 0) 3) (return nil))
     (setq rnow->rgoal (send *tfl* :lookup-transform "rhand_pose" "goal_rhand_pose" (ros::time 0)))
     (setq lnow->lgoal (send *tfl* :lookup-transform "lhand_pose" "goal_lhand_pose" (ros::time 0)))
     (setq hand_ave_diff (* 0.5 (+ (norm (send rnow->rgoal :pos)) (norm (send lnow->lgoal :pos)))))
-    ;; (if (> hand_ave_diff 200) (progn (print "箱を持つ前に下がっておく") (go-lift-pose) (send *ri* :go-pos -0.2 0 0)))
+    (if (> hand_ave_diff 200) (progn (print "箱を持つ前に下がっておく") (go-lift-pose) (send *ri* :go-pos -0.2 0 0)))
     (if (> hand_ave_diff 40) (progn
       (print "lift-box-simple")
       (lift-box-simple lift-targets nip_force)
@@ -511,7 +467,7 @@
   ;; (send *ri* :stop-impedance :arms)
   ;; (unix:sleep 5)
   ;; (send *ri* :start-impedance :arms :K-r 100.0 :D-r 100.0 :M-r 1
-  ;;                                     :K-p 80.0 :D-p 80.0 :M-p 5)
+3;;                                     :K-p 80.0 :D-p 80.0 :M-p 5)
   (send *ri* :start-graspless-manip-mode)
   (send *ri* :go-velocity 0 0 0)
   (setq stop-flag 0)
@@ -519,7 +475,7 @@
     (if (> 0 (send (send *ri* :get-box-weight) :operation_return)) (progn (setq stop-flag (+ stop-flag 1)) (print "no weight")) (setq stop-flag 0))
     (update-tf-pose (list "rarm_end_coords" "larm_end_coords"))
     (if (> 1070 (* 0.5 (elt (v+ (send *rarm_end_coords* :worldpos) (send *larm_end_coords* :worldpos)) 2))) (progn (setq stop-flag (+ stop-flag 1)) (print "owari")) (setq stop-flag 0))
-    (unix:usleep 500000) ;;100ms
+    (unix:usleep 100000) ;;100ms
   ))
   (send *ri* :go-stop)
   (unix:sleep 5)
@@ -539,8 +495,8 @@
   (when (string= *state* 'lift-box)
     (send *ri* :set-ref-forces
         (list
-         (float-vector 0 0 0) 
-         (float-vector 0 0 0) 
+         (float-vector 0 0 (* (send *robot* :weight) 4.9)) 
+         (float-vector 0 0 (* (send *robot* :weight) 4.9)) 
          (float-vector 0 0 0) ;;rarm -260  mg/2
          (float-vector 0 0 0) ;;larm -285
          )
@@ -555,8 +511,8 @@
   (when (string= *state* 'lift-box-with-handle)
     (send *ri* :set-ref-forces
         (list
-         (float-vector 0 0 0) 
-         (float-vector 0 0 0) 
+         (float-vector 0 0 (* (send *robot* :weight) 4.9)) 
+         (float-vector 0 0 (* (send *robot* :weight) 4.9)) 
          (float-vector 0 0 0) ;;rarm -260  mg/2
          (float-vector 0 0 0) ;;larm -285
          )
@@ -615,7 +571,7 @@
     )
     (send *ri* :angle-vector (send *robot* :angle-vector))
     (mv)
-    (unix:usleep 200000) ;;200ms
+    (unix:usleep 200000) ;;20ms
   )
 )
 

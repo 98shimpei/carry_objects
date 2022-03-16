@@ -29,6 +29,8 @@
         <param name="top_box_id" type="int" value="$(arg top_box_id)" />
         <param name="base_box_id" type="int" value="$(arg base_box_id)" />
         <param name="hold_box_id" type="int" value="$(arg hold_box_id)" />
+        <param name="output_frame" type="string" value="$(arg output_frame)" />
+        <param name="marker_type" type="string" value="ar" />
     </node>
 
 </launch>
